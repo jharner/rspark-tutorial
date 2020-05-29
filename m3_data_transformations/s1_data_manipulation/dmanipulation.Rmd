@@ -1,0 +1,404 @@
+---
+title: "Data Manipulation"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+The `dplyr` package is part of the `tidyverse`. It provides a grammar of data manipulation using a set of verbs for transforming tibbles (or data frames) in R or across various backend data sources.
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+library(lubridate)
+```
+This section illustrates `dplyr` using the NYC flight departures data as a context.
+```{r}
+library(nycflights13)
+```
+
+## 3.1 Data manipulation with `dplyr`
+
+This section explores the main functions in `dplyr` which Hadley Wickham describes as a *grammar of data manipulation*---the counterpoint to his *grammar of graphics* in `ggplot2`.
+
+The github repo for [`dplyr`](https://github.com/hadley/dplyr) not only houses the R code, but also vignettes for various use cases. The introductory vignette is a good place to start and can by viewed by typing the following on the command line: `vignette("dplyr", package = "dplyr")` or by opening the `dplyr.Rmd` file in the vignettes directory of the `dplyr` repo. The material for this section is based on content from Hadley Wickham's [Introduction to dplyr Vignette](https://github.com/hadley/dplyr/blob/master/vignettes/dplyr.Rmd). 
+
+`dplyr` was designed to:  
+
+* provide commonly used data manipulation tools;  
+* have fast performance for in-memory operations;  
+* abstract the interface between the data manipulation operations and the data source.
+
+`dplyr` operates on data frames, but it also operates on tibbles, a trimmed-down version of a data frame (`tbl_df`) that provides better checking and printing. Tibbles are particularly good for large data sets since they only print the first 10 rows and the first 7 columns by default although additional information is provided about the rows and columns.
+
+The real power of `dplyr` is that it abstracts the data source, i.e., whether it is a data frame, a database, or Spark.
+
+All the `dplyr` vignettes use the `nycflights13` data which contain the 336,776 flights that departed from New York City in 2013. The `flights`  tibble is one of several data sets in the package. 
+```{r}
+dim(flights)
+flights # or print(flights)
+```
+The variable names in `flights` are self explanatory, but note that `flights` does not print like a regular data frame. This is because it is a *tibble*, which is designed for data with a lot of rows and/or columns, i.e., big data. The `print` function combines features of `head` and `str` in providing information about the tibble. Alternatively, we can use `str()` to give information about tibles or data frames.  
+```{r}
+str(flights)
+```
+
+The `time_hour` variable in the `flights` data is encoded using the POSIXct format, which is identical to the format used for `time_hour` in the `weather` data of Section 3.1.4. The `time_hour` variable can be computed using the `make_datetime` function from the `ludridate` package with `year`, `month`, `day`, and `hour` as arguments. The flights table could be joined to the weather table using `time_hour` and `origin` as keys, which at least in principle allows us to model `dep_delay` in terms of the weather variables.
+
+We could also define a `time_min` variable as follows:
+```{r}
+make_datetime(year = flights$year, month = flights$month, day = flights$day,
+              hour = flights$hour, min = flights$minute)[1:5]
+```
+This would allow us to model `dep_delay` at a finer level of granularity, but unfortunately the weather variables are only measured to the nearest hour.
+
+### 3.1.1 Single Table Verbs
+
+`dplyr` provides a suite of verbs for data manipulation:  
+
+* `filter`: select rows in a data frame;  
+* `arrange`: reorder rows in a data frame;  
+* `select`: select columns in a data frame;  
+* `distinct`: find unique values in a table;  
+* `mutate`: add new columns to a data frame;  
+* `summarise`: collapses a data frame to a single row;  
+* `sample_n`: take a random sample of rows.  
+
+#### Filter and Slice
+
+`filter()` allows the selection of rows using Boolean operations, e.g., `&` or `|`.
+
+```{r}
+# The following is equivalent to filter(flights, month == 1, day == 1).
+filter(flights, month == 1 & day == 1)
+# In base R this would be done as:
+# flights[flights$month == 1 & flights$day == 1, ]
+```
+Using the `|` operator is also easy.
+```{r}
+filter(flights, month == 1 | month == 2)
+```
+Rows can also be selected by position using slice:
+```{r}
+slice(flights, 1:3)
+```
+
+#### Arrange
+
+`arrange()` orders a data frame by a set of column names (or more complicated expressions). If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+```{r}
+arrange(flights, dep_delay)
+# Or with `arr_delay` descending:
+arrange(flights, desc(dep_delay))
+```
+
+#### Select and Rename
+
+`select()` allows you to focus  on the variables of interest:
+```{r}
+# Select columns by name
+select(flights, year, month, day)
+# Select all columns between year and day (inclusive)
+select(flights, year:day)
+# Select all columns except those from year to day (inclusive)
+select(flights, -(year:day))
+```
+
+`dplyr::select()` is similar to `base::select()`, but is included in `dplyr` to have a comprehensive, consistent architecture for data manipulation.
+
+It is possible to rename variables with `select`, but `rename` is a better choice since `select` drops any unnamed variables:
+```{r}
+rename(flights, tail_num = tailnum)
+```
+
+#### Distinct
+
+`distinct()` finds unique values in a table:
+```{r}
+distinct(flights, tailnum)
+distinct(flights, origin, dest)
+```
+This is similar to `base::unique()` but is faster.
+
+#### Mutate and Transmute
+
+`mutate()` transforms variables, i.e., adds new columns that are functions of existing columns.
+```{r}
+mutate(flights,
+       gain = arr_delay - dep_delay,
+       speed = distance / air_time * 60)
+```
+
+`dplyr::mutate()` works similarly to `base::transform()`,  but `transform()` does not allow you to refer to columns that you've just created. For example, the following would not work with `transform()`, since the second argument depends on the first:
+```{r}
+mutate(flights,
+       gain = arr_delay - dep_delay,
+       gain_per_hour = gain / (air_time / 60))
+```
+Note: The new variables are not actually part of `flights` as can be seen by printing `flights`, but the new tibble can be used as part of a workflow. Alternately, a new tibble, e.g., `flights_gain` could be created by: `flights_gain <- mutate(...)`.
+
+If you only want to keep the new variables, use `transmute()`:
+```{r}
+transmute(flights,
+          gain = arr_delay - dep_delay,
+          gain_per_hour = gain / (air_time / 60)
+)
+```
+
+Now let's add a time_min variables to the flights data using the four time variables. The modulo operator is used in which the quotient (hour) and remainder (min) are extracted from `sched_dep_time`.
+```{r}
+mutate(flights, 
+       time_min = make_datetime(year, month, day,
+                                sched_dep_time %/% 100,
+                                sched_dep_time %% 100))$time_min[1:5]
+```
+
+#### Sample
+
+`sample_n()` and `sample_frac()` are used to take a random sample of rows for a fixed number and a fixed fraction, respectively.
+```{r}
+sample_n(flights, 10)
+sample_frac(flights, 0.01)
+```
+The argument `replace = TRUE` samples with replacement, e.g., for a bootstrap sample. The `weight` argument allows you to weight the observations.
+
+The above verbs have a common syntax.  
+
+* the first argument is a data frame (or tibble);  
+* subsequent arguments describe what to do to the data frame;  
+* the result is data frame (or tibble).  
+
+These properties allow the user to form a workflow chain or pipeline with the verbs and other compatible functions.
+
+### 3.1.2 Grouped Operations
+
+These above verbs become very powerful when you apply them to groups of observations within a dataset. In `dplyr`, this is done by the `group_by()` function. It breaks a dataset into specified groups of rows. When you then apply the verbs above on the resulting object they'll be automatically applied "by group." 
+
+We now split the complete dataset into individual planes and then summarise each plane by counting the number of flights and computing the average distance and arrival delay.
+```{r}
+by_tailnum <- group_by(flights, tailnum)
+delay <- summarise(by_tailnum,
+  count = n(),
+  dist = mean(distance, na.rm = TRUE),
+  delay = mean(arr_delay, na.rm = TRUE))
+delay <- filter(delay, count > 20, dist < 2000)
+delay
+```
+We can then see if the average delay is related to the average distance flown by a plane.
+```{r}
+library(ggplot2)
+ggplot(delay, aes(dist, delay)) +
+  geom_point(aes(size = count), alpha = 1/2) +
+  geom_smooth() +
+  scale_size_area()
+```
+The average delay increases for short distance (with a lot of variation), but then levels out.
+
+This course does not focus on graphics, but we will use simple graphics in various workflows. The principal graphics packages that integrate into workflows include:  
+
+* [Grammar of graphics](https://github.com/hadley/ggplot2)  
+
+`ggplot2` is a plotting system for R, based on the Leland Wilkinson's grammar of graphics It takes care of many of the details that make plotting a hassle (like drawing legends) as well as providing a powerful model of graphics that makes it easy to produce complex multi-layered graphics.
+
+* [Interactive grammar of graphics](https://github.com/rstudio/ggvis)  
+
+`ggvis` makes it easy to describe interactive web graphics in R. It combines:
+
+* a grammar of graphics from ggplot2,  
+* reactive programming from shiny, and  
+* data transformation pipelines from dplyr.  
+
+You use `summarise()` with aggregate functions, which take a vector of values and return a single number. There are many useful examples of such functions in base R, e.g., `mean()`, `sum()`, and `sd()`.
+
+`dplyr` adds:  
+
+* `n()`: the number of observations in the current group;
+* `n_distinct(x)`: the number of unique values in `x`;
+* `first(x)`, `last(x)`, and `nth(x, n)`: the first, last, and nth observation in `x`.
+
+You can also use your own functions.
+
+For example, we could use these to find the number of planes and the number of flights that go to each possible destination:
+```{r}
+destinations <- group_by(flights, dest)
+summarise(destinations,
+  planes = n_distinct(tailnum),
+  flights = n()
+)
+```
+
+When you group by multiple variables, each summary peels off one level of the grouping. Thus, you can progressively roll-up a dataset:
+```{r}
+daily <- group_by(flights, year, month, day)
+(per_day   <- summarise(daily, flights = n()))
+(per_month <- summarise(per_day, flights = sum(flights)))
+(per_year  <- summarise(per_month, flights = sum(flights)))
+```
+
+### 3.1.3 Chaining
+
+The `dplyr` API is *functional*, i.e., the function calls don't have *side-effects*. That means you must always save intermediate results, which doesn't lead to elegant code. One solution is to do it step-by-step.
+```{r}
+a1 <- group_by(flights, year, month, day)
+a2 <- select(a1, arr_delay, dep_delay)
+a3 <- summarise(a2,
+  arr = mean(arr_delay, na.rm = TRUE),
+  dep = mean(dep_delay, na.rm = TRUE))
+a4 <- filter(a3, arr > 30 | dep > 30)
+a4
+```
+This is not a good idea for big data.
+
+If you want to save storage, another way is to wrap the function calls inside each other.
+```{r}
+filter(
+  summarise(
+    select(
+      group_by(flights, year, month, day),
+      arr_delay, dep_delay
+    ),
+    arr = mean(arr_delay, na.rm = TRUE),
+    dep = mean(dep_delay, na.rm = TRUE)
+  ),
+  arr > 30 | dep > 30
+)
+```
+
+However, this is difficult to read because the order of the operations is from inside to out. Thus, the arguments are a long way away from the function. To get around this problem, `dplyr` provides the `%>%` operator. `x %>% f(y)` turns into `f(x, y)` so you can use it to rewrite multiple operations that you can read left-to-right, top-to-bottom:
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  select(arr_delay, dep_delay) %>%
+  summarise(
+    arr = mean(arr_delay, na.rm = TRUE),
+    dep = mean(dep_delay, na.rm = TRUE)
+  ) %>%
+  filter(arr > 30 | dep > 30)
+```
+The `%>%` R operator is somewhat like UNIX pipes in which the standard output of one command becomes the standard input of the next. Thus, we sometimes call `%>%` the R pipe operator.
+
+However, `%>%` is very powerful since it can be used with many R functions including graphics functions in R packages such as `ggplot2` and `ggvis`.
+
+Let's redo our grouped `tailnum` example using `%>%`:
+```{r}
+group_by(flights, tailnum) %>%
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)) %>%
+  filter(
+    count > 20, dist < 2000) %>%
+  ggplot(
+    aes(dist, delay)) +
+    geom_point(aes(size = count), alpha = 1/2) +
+    geom_smooth() +
+    scale_size_area()
+```
+What makes this work is that the first argument is a data frame and the output is a data frame. Do you  see the potential of building very powerful workflows?
+
+### 3.1.4 Combining Tables
+
+It's rare that a data analysis involves only a single table of data. In practice, you'll normally have many tables that contribute to an analysis, and you need flexible tools to combine them. 
+
+The material for this section is extracted from Hadley Wickham's [dplyr Two-table Vignette](https://github.com/hadley/dplyr/blob/master/vignettes/two-table.Rmd).
+
+
+In `dplyr`, there are three families of verbs that work with two tables at a time:  
+
+* Mutating joins, which add new variables to one table from matching rows in another.  
+* Filtering joins, which filter observations from one table based on whether or not they match an observation in the other table.  
+* Set operations, which combine the observations in the data sets as if they were set elements.  
+
+This discussion assumes that you have tidy data, where the rows are observations and the columns are variables (see Section 3.3). The discussion here will be limited to mutating joins.
+
+All two-table verbs work similarly. The first two arguments are `x` and `y`, and provide the tables to combine. The output is always a new table with the same type as `x`
+
+#### Mutating joins
+
+Mutating joins allow you to combine variables from multiple tables. For example, take the `nycflights13` data. In one table we have flight information with an abbreviation for carrier, and in another we have a mapping between abbreviations and full names. You can use a join to add the carrier names to the flight data:
+```{r}
+# Drop unimportant variables so it's easier to understand the join results.
+flights2 <- flights %>%
+  select(year:day, hour, origin, dest, tailnum, carrier)
+airlines
+
+flights2 %>% 
+  left_join(airlines)
+```
+
+#### Controlling how the tables are matched
+
+In addition to `x` and `y`, each mutating join takes an argument `by` that controls which variables are used to match observations in the two tables. There are several ways to specify it.
+
+* `NULL`, the default. `dplyr` will will use all variables that appear in both tables, a natural join. For example, the flights and weather tables match on their common variables: year, month, day, hour and origin.  
+```{r}
+str(weather)
+flights2 %>%
+  left_join(weather)
+```
+
+* A character vector, `by = "x"`. Like a natural join, but uses only some of the common variables. For example, flights and planes have year columns, but they mean different things so we only want to join by `tailnum`.
+```{r}
+flights2 %>%
+  left_join(planes, by = "tailnum")
+```
+Note that the year columns in the output are disambiguated with a suffix.
+
+* A named character vector: `by = c("x" = "a")`. This will match variable `x` in table `x` to variable `a` in table `y`. The variables from use will be used in the output.
+
+Each flight has an origin and destination airport, so we need to specify which one we want to join to:
+```{r}
+flights2 %>%
+  left_join(airports, c("dest" = "faa"))
+flights2 %>%
+  left_join(airports, c("origin" = "faa"))
+```
+
+#### Types of join
+
+There are four types of mutating join, which differ in their behavior when a match is not found. We'll illustrate each with a simple example:
+```{r}
+(df1 <- data_frame(x = c(1, 2), y = 2:1))
+(df2 <- data_frame(x = c(1, 3), a = 10, b = "a"))
+```
+`inner_join(x, y)` only includes observations that match in both `x` and `y`.
+```{r}
+df1 %>% inner_join(df2) # %>% knitr::kable()
+```
+
+`left_join(x, y)` includes all observations in `x`, regardless of whether they match or not. This is the most commonly used join because it ensures that you don't lose observations from your primary table.
+```{r}
+df1 %>% left_join(df2)
+```
+
+`right_join(x, y)` includes all observations in `y`. It's equivalent to `left_join(y, x)`, but the columns will be ordered differently.
+```{r}
+df1 %>% right_join(df2)
+df2 %>% left_join(df1)
+```
+
+`full_join()` includes all observations from `x` and `y`.
+
+```{r}
+df1 %>% full_join(df2)
+```
+The left, right and full joins are collectively know as outer joins. When a row doesn't match in an outer join, the new variables are filled in with missing values.
+
+Each two-table verb has a straightforward SQL equivalent. The correspondences between R and SQL are:  
+
+* `inner_join()`:	`SELECT * FROM x JOIN y ON x.a = y.a`  
+* `left_join()`:	`SELECT * FROM x LEFT JOIN y ON x.a = y.a`  
+* `right_join()`:	`SELECT * FROM x RIGHT JOIN y ON x.a = y.a`  
+* `full_join()`:	`SELECT * FROM x FULL JOIN y ON x.a = y.a`  
+
+`x` and `y` don't have to be tables in the same database. If you specify `copy = TRUE`, `dplyr` will copy the `y` table into the same location as the `x` variable. This is useful if you've downloaded a summarized dataset and determined a subset for which you now want the full data.
+
+You should review the coercion rules, e.g., factors are preserved only if the levels match exactly and if their levels are different the factors are coerced to character.
+
+At this time, `dplyr` does not provide any functions for working with three or more tables.
+
+See the complete set of vignettes on the `dplyr` repo for other examples.
+

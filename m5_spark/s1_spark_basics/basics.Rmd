@@ -1,0 +1,79 @@
+---
+title: "Spark Basics"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The `sparklyr` R frontend to Spark is based on a `dplyr` interface to Spark SQL. Once these required packages are loaded, a Spark connection is established.
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+library(sparklyr)
+# start the sparklyr session locally or to the master container
+master <- "local"
+# master <- "spark://master:7077"
+sc <- spark_connect(master = master)
+```
+
+[Spark](http://spark.apache.org/docs/latest/programming-guide.html#overview) is a general-purpose cluster computing system, which:
+
+* has high-level APIs in Java, Scala, Python and R;  
+* supports multi-step data pipelines using directed acyclic graphs (DAGs);
+* supports in-memory data sharing across DAGs allowing different jobs to work with the same data.
+
+Spark provides a unified framework to manage big data processing with a variety of data sets that are diverse in nature, e.g., text data, graph data, etc., as well as the source of data (batch vs. real-time streaming data).
+
+Spark supports a rich set of higher-level tools including:   
+
+* *Spark SQL* for running SQL-like queries on Spark data using the JDBC API or the Spark SQL CLI. Spark SQL allows users to extract data from different formats, (e.g., JSON, Parquet, or Hive), transform it, and load it for *ad-hoc* querying, i.e., ETL.  
+
+* *MLlib* for machine learning, including classification, regression, clustering, collaborative filtering, dimensionality reduction, and the underlying optimization algorithms. MLlib uses the DataFrame API and thus takes advantage of the Spark SQL engine.
+
+* *Structured Streaming* for real-time data processing. Spark streaming uses a fault-tolerant stream processing engine built on the Spark SQL engine. Thus, you can express your streaming computation the same way you would express a batch computation on static data. Using the DataFrame API, the Spark SQL engine will take care of running it incrementally and continuously and updating the final result as streaming data continues to arrive. 
+
+[SparkR](https://spark.apache.org/docs/latest/sparkr.html) is part of the officially supported Spark distribution. However, we will focus on the [sparklyr](https://spark.rstudio.com) package.
+
+## 5.1 Sparklyr Basics
+
+The `sparklyr` package is being developed by RStudio. It is undergoing rapid expansion. See [RStudio's sparklyr](https://spark.rstudio.com) for information.
+
+The `sparklyr` R package provides a `dplyr` backend to Spark. Using `sparklyr`, you can: 
+
+* filter and aggregate Spark DataFrames and bring them into R for analysis and visualization;  
+* develop workflows using `dplyr` and compatible R packages;  
+* write R code to access Spark's machine learning library, [MLlib](http://spark.apache.org/docs/latest/mllib-guide.html);  
+* create Spark extensions.  
+
+Using `sparklyr`, connections can be made to local instances or to remote Spark clusters. In our case the connection is to a local connection bundled in the `rstudio` container. 
+
+The `sparklyr` library is loaded in the setup above and a Spark connection is established. The Spark connection `sc` provides a `dplyr` interface to Spark.
+
+### 5.1.1 dplyr
+
+The `dpyr` verbs, e.g., `mutate`, `filter`, can be used on Spark DataFrames. A more complete discussion is given in Section 5.2.
+
+We will use the `flights` data in the `nycflights13` package as an example. If its size becomes an issue, execute each chunk in sequence in notebook mode.
+```{r}
+library(nycflights13)
+str(flights)
+```
+The `flights` R data frame is a tibble, which allows large data to be displayed. This data frame has the date of departure, the actual departure time, etc. See the package documentation for variable definitions.
+
+The `copy_to` function copies an R `data.frame` to Spark as a Spark table. The resulting object is a `tbl_spark`, which is a `dplyr`-compatible interface to the Spark DataFrame.
+```{r}
+flights_tbl <- copy_to(sc, nycflights13::flights, "flights")
+flights_tbl
+src_tbls(sc)
+```
+By default, the `flights` Spark table is cached in memory (`memory = TRUE`), which speeds up computations, but by default the table is not partitioned (`repartition = 0L`) since we are not running an actual cluster. See the `copy_to` function in the `sparklyr` package for more details.
+
+The Spark connection should be disconnected at the end of a task.
+```{r}
+spark_disconnect(sc)
+```

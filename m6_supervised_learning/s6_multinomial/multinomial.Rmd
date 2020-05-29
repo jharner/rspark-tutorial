@@ -1,0 +1,87 @@
+---
+title: "Multinomial Regression"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+`sparklyr` requires a `dplyr` compatible back-end to Spark. 
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+library(sparklyr)
+# start the sparklyr session
+master <- "local"
+# master <- "spark://master:7077"
+sc <- spark_connect(master)
+```
+
+## 6.6 Multinomial Regression
+
+We now look at the classification problem in which there are $k > 2$ groups.
+
+### 6.6.1 Basics
+
+Multinomial regression is a relatively simple extension of logistic regression. We now have $k - 1$ logit transformations expressed linearly in terms of the $X$'s. The last group is used as the denominator in these logits.
+
+We can then compute $P(G = l\, | X = x)$, for $l = 1, 2, \ldots, k - 1$. $P(G = k\, |\, X = x)$ is obtained by subtraction.
+
+### 6.6.2 Multinomial Models
+
+The diabetes data from the Reaven and Miller study has diabetic-related measurements on 145 patients:   
+* RelWeight - relative weight  
+* GluFast - blood sugar level prior to the glucose tolerance test  
+* GluTest - average blood sugar level during the test    
+* InsTest - average insulin level during the test  
+* SSPG - a measure of how glucose and insulin interact  
+* CClass - clinical diagnosis (3=Normal, 2=Chemical Diabetic, 1=Overt Diabetic)  
+The dataset is small, but it illustrates binomial models using two levels (by combining Overt and Chemical Diabetics) or multinomial models using three levels.
+
+The `diabetes.csv` file is read into an R data frame and the `CClass` variable is converted from an `int` to a factor with `chr` values.
+
+```{r}
+diabetes_df <- read.csv("diabetes.csv", header = TRUE) %>%
+  mutate(GluDiff = GluTest - GluFast) %>%
+  mutate(CClass = factor(CClass, labels = c("o", "c", "n")))
+diabetes_sdf <- copy_to(sc, diabetes_df, "diabetes_sdf")
+head(diabetes_sdf)
+```
+It would be possible to binarize `CClass` by combining `o` and `c` to `d` using:
+```
+mutate(CClass = recode(CClass, "o" = "d", "c" = "d", "n" = "n"))
+```
+but we will keep 3 groups.
+
+The `ml_logistic_regression` function accommodates $k > 2$.
+```{r}
+diabetes_logistic_fit <- diabetes_sdf %>%
+  ml_logistic_regression(CClass ~ GluDiff)
+diabetes_logistic_fit
+```
+The output gives the coefficient estimates for each of the three groups. The normal group appears to be quite different than the chemical and overt disbetics.
+
+```{r}
+diabetes_logistic_predict <- ml_predict(diabetes_logistic_fit)
+diabetes_logistic_predict
+```
+
+The f1 performance measure, which combines precision and recall is:
+```
+ml_multiclass_classification_evaluator(diabetes_logistic_predict, label_col = "CClass",
+                            prediction_col = "prediction", metric_name = "f1")
+```
+whereas the accuracy is:
+```
+ml_multiclass_classification_evaluator(diabetes_logistic_predict, label_col = "CClass",
+                       prediction_col = "prediction", metric_name = "accuracy")
+```
+
+```{r}
+spark_disconnect(sc)
+```
+
+

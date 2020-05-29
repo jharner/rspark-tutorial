@@ -1,0 +1,18 @@
+<!ELEMENT temperatures (variable,
+    filename,
+    filepath,
+    subset,
+    longitude,
+    latitude,
+    case*)>
+<!ELEMENT variable (#PCDATA)>
+<!ELEMENT filename (#PCDATA)>
+<!ELEMENT filepath (#PCDATA)>
+<!ELEMENT subset (#PCDATA)>
+<!ELEMENT longitude (#PCDATA)>
+<!ELEMENT latitude (#PCDATA)>
+<!ELEMENT case EMPTY>
+
+<!ATTLIST case
+    date ID #REQUIRED
+    temperature CDATA #IMPLIED>

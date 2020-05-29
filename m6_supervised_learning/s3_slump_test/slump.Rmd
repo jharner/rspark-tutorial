@@ -1,0 +1,143 @@
+---
+title: "Linear Regression"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+`sparklyr` requires a `dplyr` compatible back-end to Spark. 
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+
+# load the sparklyr package
+library(sparklyr)
+# start the sparklyr session
+master <- "local"
+# master <- "spark://master:7077"
+sc <- spark_connect(master)
+```
+
+## 6.3 Concrete Slump Test Regression
+
+Load `slump.csv` into Spark with `spark_read_csv` from the local filesystem.
+```{r}
+slump_sdf <- spark_read_csv(sc, "slump_sdf",
+                path =  "file:///home/rstudio/rspark-tutorial/data/slump.csv")
+head(slump_sdf)
+```
+
+First we need to split `slump_sdf` into a training and a test Spark DataFrame.
+```{r}
+slump_partition <- tbl(sc, "slump_sdf") %>%
+  sdf_partition(training = 0.7, test = 0.3, seed = 2)
+slump_train_sdf <- slump_partition$training
+slump_test_sdf <- slump_partition$test
+```
+
+The full model is now run.
+```{r}
+slump_lr_full_fit <- slump_partition$training %>%
+  ml_linear_regression(compressive_strength ~ cement + slag + fly_ash + water
+                       + sp + coarse_aggr + fine_aggr)
+summary(slump_lr_full_fit)
+```
+Notice that the model summary does not provide much useful information. We can p-values by by getting a `tidy` summary.
+```{r}
+tidy(slump_lr_full_fit)
+```
+
+Performance metrics for regression are generally obtained first be getting predictions and then using an evaluator to get a specific metric.
+```{r}
+slump_lr_full_predict <- ml_predict(slump_lr_full_fit)
+slump_lr_full_predict
+ml_regression_evaluator(slump_lr_full_predict, label_col = "compressive_strength",
+                        prediction_col = "prediction", metric_name = "rmse")
+```
+This would be awkward if want to evaluate a series of models for several metrics.
+
+The model for the lasso with varying values of the regularization parameter $\lambda$.
+```{r}
+slump_perf_metrics <- function(l) {
+  slump_train_sdf %>%
+    ml_linear_regression(compressive_strength ~ cement + slag + fly_ash +
+                         water + sp + coarse_aggr + fine_aggr,
+                         elastic_net_param = 1, reg_param = l)
+}
+```
+
+First, we Initialize the performance data frames for $\lambda = 0$. Notice that we can get the performance metrics as the components of summary list, which in turn if an element of the fitted list.
+```{r}
+regParm <- c(0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14)
+slump_lr_errors <- data.frame(lambda = 0, 
+                        r2 = slump_lr_full_fit$summary$r2,
+                        rmse = slump_lr_full_fit$summary$root_mean_squared_error,
+                        mae = slump_lr_full_fit$summary$mean_absolute_error)
+slump_lr_coef <- as.data.frame(slump_lr_full_fit$coefficients)
+```
+
+We now calculate `r2`, `rmse`, and `mae` for each of the models.
+```{r}
+for(l in regParm) {
+  slump_lr_fit <- slump_perf_metrics(l)
+  slump_lr_errors <- 
+    data.frame(lambda = l,
+               r2 = slump_lr_fit$summary$r2,
+               rmse = slump_lr_fit$summary$root_mean_squared_error,
+               mae = slump_lr_fit$summary$mean_absolute_error) %>%
+    rbind(slump_lr_errors, .)
+  slump_lr_coef <- 
+    as.data.frame(slump_lr_fit$coefficients) %>%
+    cbind(slump_lr_coef, .)
+}
+slump_lr_errors
+```
+
+Finally, we plot the performance measures.
+```{r}
+library(ggplot2)
+slump_lr_errors %>%
+  ggplot(aes(x = lambda)) +
+  geom_point(aes(y = rmse, color = 'rmse')) +
+  geom_line(aes(y = rmse, color = 'rmse')) +
+  geom_point(aes(y = mae, color = 'mae')) +
+  geom_line(aes(y = mae, color = 'mae')) + 
+  ggtitle("Performance Metric for the Slump Regulated Models") +
+  xlab("Lambda") + ylab("Error Measure")
+```
+
+Based on the performance metrics, it is clear we want `lambda` to be small. However, we also want parsimony.
+
+We now get the parameter estimates as `lambda` increases.
+```{r}
+names(slump_lr_coef) <- as.character(rbind(c(0.0, regParm)))
+slump_lr_coef <- t(slump_lr_coef)
+slump_lr_coef
+```
+
+The lasso trace of the coefficient estimates provides a way of picking the strength of regulation.
+```{r}
+library(ggplot2)
+as.data.frame(cbind(lambda = c(0.0, regParm), slump_lr_coef)) %>%
+  ggplot(aes(x = lambda)) +
+  geom_line(aes(y = cement, color = 'cement')) +
+  geom_line(aes(y = slag, color = 'slag')) + 
+  geom_line(aes(y = fly_ash, color = 'fly_ash')) + 
+  geom_line(aes(y = water, color = 'water')) + 
+  geom_line(aes(y = sp, color = 'sp')) + 
+  geom_line(aes(y = coarse_aggr, color = 'coarse_aggr')) + 
+  geom_line(aes(y = fine_aggr, color = 'fine_aggr')) +
+  ggtitle("Parameter Trace for the Slump Regulated Models") +
+  xlab("Lambda") + ylab("Coeff. Estimate")
+```
+Over the range of  $\lambda$, we have 3 features (`cement`, `fly_ash`, and `water`) with consistently non-zero coefficient estimates. Arguably, `coarse_aggr` also deviates from 0. These agree with the model we found by *ad hoc* variable selection in Section 6.1.
+
+At this point we could pick several models to run on the test Spark DataFrame for final selection.
+
+```{r}
+spark_disconnect(sc)
+```

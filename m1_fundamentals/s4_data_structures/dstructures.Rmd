@@ -1,0 +1,228 @@
+---
+title: "Data Structures"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.4 Data Structures
+
+Material in this section is partially based on Hadley's Wickham's [Advanced R Data Structures chapter](http://adv-r.had.co.nz/Data-structures.html).
+
+The canonical data structure in R is the vector. Vectors are of two types:   
+
+* atomic vectors   
+* lists  
+
+Other data structures can be constructed from these basic types. A `matrix`, or more generally an `array`, is constructed from an atomic vector by specifying a `dim` attribute. A `data.frame` is a special type of `list`.
+
+Data structures in R are organized by:
+
+* Dimensionality  
+* Homogeneity
+
+Dimension  | Homogeneous   | Heterogeneous  
+---------- | ------------- | -------------  
+1-dim      | atomic vector | list  
+2-dim      | matrix        | data frame  
+n-dim      | array         |   
+
+These data structures are now discussed including their metadata as specified in the data's attributes.
+
+### 1.4.1 Atomic vectors
+
+The common types of atomic vectors are:  
+
+* numeric (double)  
+* character  
+* integer  
+* logical  
+
+Atomic vectors are created by the R function `c()`, i.e., combine. 
+
+We now consider the `puromucin` data in which we predict `velocity` in terms of `conc`.
+```{r pyromycin}
+conc <- c(.02, .02, .06, .06, .11, .11, .22, .22, .56, .56, 1.1, 1.1)
+velocity <- c(76L, 47L, 97L, 107L, 123L, 139L, 159L, 152L, 191L, 201L, 207L, 200L)
+```
+Since `conc` contains decimals, it is numeric (double). The `L` following the integers forces `velocity` to be integer.
+
+If you execute each chunk individually (by clicking on the right error above), you will see that `conc` and `velocity` are in the Global Environment (Click the `Environment` tab.). When R searches for a symbol name, e.g., `conc`, it starts in the Global Environment.
+
+From a theoretical perspective `velocity` can be modeled by the Michaelis-Menten function:  
+$$ y = \frac{\beta_0 x}{\beta_1 + x} + \epsilon $$.  
+where $x$ is the concentration (`conc`) and $y$ is the velocity of the enzymatic reaction (`velocity`). This can be fit by a nonlinear regression using the `nls` function.
+```{r}
+puromycin.nls <- nls(velocity ~ (beta0 * conc) / (beta1 + conc),
+                     start=c(beta0=200, beta1=0.1))
+summary(puromycin.nls)
+```
+Initial values must be set. $\beta_0$ is the asymptotic value of `velocity`, about 200. $\beta_1$ is the value of `conc` at which the function reaches half its asymptotic value, about 0.1. We fit the model using atomic vectors for $x$ and $y$, in our case `conc` and `velocity`, respectively. The `start` argument uses a named numeric vector (done here) or a named list (see below).
+
+Next, let's visually explore the fit.
+```{r}
+plot(conc, velocity, xlab="Concentation", ylab="Velocity")
+conc.seq <- seq(min(conc), max(conc), length=100)
+lines(conc.seq, predict(puromycin.nls, list(conc=conc.seq)), col = "red", lwd = 2)
+```
+
+In order to plot the curve, we use the `lines` function. We could have used `fitted` rather than `predict` to get the $y$-values, but the curves would have been segmented. Instead, we use a sequence of $x$ values from `min` to `max` concentration of length 100 to get a smooth curve. The data appear to follow the Michaelis-Menten function, but we have not yet done a formal test.
+
+Numeric vectors can be used in arithmetic expressions where the operations are performed element by element. Rules exist for cases in which vectors in an expression are not of equal length. This is called *vectorized arithmetic*. See CRAN's [An Introduction to R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Simple-manipulations-numbers-and-vectors). Likewise, strings which form the elements of a character vector can be manipulated.
+
+#### Matrices and Arrays
+
+If a `dim()` attribute is added to an atomic vector, it behaves like a multi-dimensional array. A matrix is a special case  of array, which has two dimensions. Matrices are commonly used in computational statistics. 
+
+Matrices are easy to construct in R
+```{r}
+x <- c(1:12)
+dim(x) <- c(6, 2)
+x
+length(x)
+nrow(x)
+ncol(x)
+```
+Names for the rows and columns of the matrix can easily be added as follows:
+```{r}
+rownames(x) <- paste("Obs", 1:6, sep="")
+colnames(x) <- paste("Var", 1:2, sep="")
+x
+```
+
+R has many operators and functions for manipulating matrices. For example, `%*%` is used for matrix multiplication and `t` is a function for transposing a matrix. See [An Introduction to R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Arrays-and-matrices) for details.
+
+
+A three dimension array is also easily constructed.
+```{r}
+dim(x) <- c(3, 2, 2)
+x
+```
+We can think of this as two $3 \times 2$ matrices forming a three-dimensional structure.
+
+We can also use the `matrix` and `array` functions to create matrices and arrays.
+```{r}
+matrix(1:12, nrow=6, ncol=2)
+array(1:12, c(3, 2, 2))
+```
+
+### 1.4.2 Lists
+
+Lists differ from atomic vectors because their elements can be of any type, including lists, i.e., a lists is a recursive data structure. You construct lists by using `list()`.
+```{r}
+(l <- list(c(1, 2, 3), c("a", "b"), c(TRUE, FALSE)))
+```
+Single brackets, e.g., `[1]` extract the first element of the list, i.e., a list, whereas double brackets `[[1]]` extract the actual elements of the list.
+```{r}
+l[1]
+l[[1]]
+```
+Notice that the first element of the list is a double vector, the second is a character vector, and the third element is a logical vector.
+
+The following list has an element which is a list, i.e., the data structure is recursive:
+```{r}
+(l.recursive <- list(list(c(1, 2,3), c("a", "b")), c(TRUE, FALSE)))
+is.recursive(l.recursive)
+```
+The first element of the list is a list with two elements given by `[[1]][[1]]` and `[[1]][[2]]`
+```{r}
+l.recursive[1]
+l.recursive[[1]][[1]]
+```
+
+The elements of the list can be named, which allows one to extract each element more easily with a '$' as follows:
+```{r}
+# A named list
+(l.named <- list(A=c(1, 2, 3), B=c("a", "b"), C=c(TRUE, FALSE)))
+l.named$B
+l.named[[2]]
+```
+
+More information on lists is available in [An Introcution to R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Lists).
+
+### 1.4.3 Data Frames
+
+A data frame is a list of equal-length vectors in which the elements of each column must be of the same type, but the columns can be of different types.
+```{r}
+df <- data.frame(Var1=1:6, Var2=7:12, Var3=rep(c("a", "b"), each=3))
+df
+str(df)
+```
+The function `str` shows the structure of an R object. Notice that `Var3` is coerced (by default) into a factor with 2 levels.
+```{r}
+attributes(df$Var3)
+levels(df$Var3)
+```
+A factor has more structure than a character vector, e.g., a `levels` attribute. A factor can be created by the `factor` function.
+
+We have created various R objects which are now in the Global Environment, which can be seen by:
+```{r}
+ls()
+```
+Let's remove the variables we no longer need:
+```{r}
+rm(conc.seq, df, l, l.named, l.recursive, puromycin.nls, x)
+```
+
+Rather than analyze the puromycin data using two vectors, we can combine `conc` and `velocity` into a data frame.
+```{r}
+puromycin.df <- data.frame(conc=conc, velocity=velocity)
+puromycin.df
+str(puromycin.df)
+```
+
+Once we have formed the data frame `puromycin.df`, we can remove `conc` and `velocity` from the Global environment using `rm`:
+```{r}
+ls()
+rm(conc, velocity)
+ls()
+```
+
+If you would try to run the `nls` model above, it would not run since R would not be able to find `conc` and `velocity`. You would need to substitute `puromycin.df$conc` and `puromycin.df$velocity` for these variables. Since this is awkward, we look at two solutions.
+
+The first way involves specifying the data frame in the `data` argument.
+```{r}
+puromycin.nls <- nls(velocity ~ (beta0 * conc) / (beta1 + conc),
+                     data=puromycin.df, start=c(beta0=200, beta1=0.1))
+puromycin.nls$data
+```
+In the first model above, `conc` and `velocity` are found by `nls` in the global environment, whereas here these variables are found in the environment created by the data frame `puromycin.df`. 
+
+The problem with this approach is that `conc` and `velocity` are only available in this single statement. R will not automatically look inside a data frame to find variable names. A better approach is to put `puromycin.df` in R's search path.
+```{r}
+search()
+ls() # or ls(pos=1), i.e., position 1 (Global Env) is the default for ls()
+attach(puromycin.df)
+search()
+ls(pos=2)
+```
+Notice that `puromycin.df` was placed in the second position in the search path. Now we can run the model without using the `$` operator or specifying the `data` argument.
+```{r}
+puromycin.nls <- nls(velocity ~ (beta0 * conc) / (beta1 + conc),
+                     start=c(beta0=200, beta1=0.1))
+puromycin.nls$data
+puromycin.nls
+```
+R looks for `conc` and `velocity` in the Global Environment and does not find them. It then looks for them in position 2 and finds them.
+
+If you look at the Environment tab and execute R chunk by chunk, you can see how the contents of the Global Environment change. You can also click on the dropdown arrow and select `puromycin.df` to see its contents.
+
+Once we are finished accessing the variables in `puromycin.df`, it should be detached. Otherwise we will keep attaching another copy every time the code is run.
+```{r}
+detach(puromycin.df)
+```
+
+We can summarize the output and test the parameters for significance using `summary`.
+```{r}
+summary(puromycin.nls)
+```
+Notice that both regression coefficients are highly significant.
+
+The concept of environments is critical to understanding R's functional programming paradigm.
+
+More information on data frames is available in [An Introcution to R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Data-frames).

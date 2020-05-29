@@ -1,0 +1,147 @@
+---
+title: "Kmeans Clustering"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tibble)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(sparklyr)
+sc <- spark_connect(master = "local")
+```
+
+## 7.2 K-means Clustering
+
+### 7.2.1 K-means Basics
+
+Linear regression and logistic regression are *supervised* learning methods. By that we mean that the the values of the outcome variable, e.g., the labels, are known, at least for the training set. $k$-means is an *unsupervised* learning methods. By that we mean that the values of the outcome variable are unknown or that there is no outcome variable, e.g., the labels are unknown.
+
+The objective of $k$-means is to group or cluster similar objects together. For example, suppose you have users and you know the age, gender, income, state, and household size for each user. We then want to segment, stratify, group, of cluster the data. You may or may not have an *a priori* notion concerning the number of groups $k$.
+
+The $k$-means algorithm works as follows:  
+
+1. Initially, you randomly pick $k$ centroids (or points that will be the center of your clusters) in d-space. Try to make them near the data but different from one another.  
+2. Then assign each data point to the closest centroid.  
+3. Move the centroids to the average location of the data points (which correspond to users in this example) assigned to it.  
+4. Repeat the preceding two steps until the assignments don’t change, or change very little.  
+
+More formally, let $x_1, x_2, \cdots, x_n$ be the $n$ observed data points. Let $s_1, s_2, \cdots, s_k$ be initial seed points---perhaps chosen randomly.The seed points form the nuclei of the clusters $C_1, C_2, \cdots, C_k$. The data point $x_i$ is put into cluster $C_j$ if
+$$
+  \lVert x_i - s_j \rVert = \min_{a = 1, \cdots, k} \lVert x_i - s_a \rVert,
+$$
+i.e., if $x_i$ is closest to the $j^{\mbox{th}}$ seed point. At the end of the first step, we have $k$ clusters: $C_1, C_2, \cdots, C_k$. It is possible that some clusters are empty and thus there can be fewer than $k$ clusters. The choice of the initial seed points is critical in determining clusterings not only in the first stage, but also in the final stage. Hierarchical clustering is often used to get the initial seed points, but other choices are possible.
+
+For each cluster, e.g., $C_r$, compute the cluster centroid $\bar{x}_r$. The  $\bar{x}_r$  become the new seed points and the observations are formed into clusters using the above spherical (Euclidean) distances. This process is iterated until the cluster means do not change.
+
+### 8.2.2 K-means on the State Crime Data
+
+Read in the crime data for the 50 states:
+```{r}
+state_crime_df <- read_csv(
+  "/home/rstudio/rspark-tutorial/data/state_crime.csv")
+```
+We select the variables of interest and standardize them as in Section 8.1.2.
+```{r}
+state_crime_std_df <- state_crime_df %>%
+  select(-State, -Abbr, -Division, -Region, -Unemploy, -Police, -InSchool) %>%
+  lapply(function(e) scale(e)) %>%
+  as.data.frame()
+```
+Our objective is to compute the PCA scores on the standardized variables for the first two components. Once we perform k-means clustering we plot the points in this 2-dimensional PCA space.
+```{r}
+state_crime_pca <- state_crime_std_df %>%
+  princomp()
+summary(state_crime_pca)
+```
+The PCA loadings and scores (projections into PCA space) are given by:
+```{r}
+state_crime_pca$loadings
+state_crime_pca_scores <- predict(state_crime_pca) %>%
+  as.data.frame()
+```
+The clusters are now computed and identified by projecting into the first two PCA components.
+```{r}
+state_crime_kmeans <- kmeans(state_crime_std_df, centers = 4)
+state_crime_pca_centers <- predict(state_crime_pca, state_crime_kmeans$centers) %>%
+  as.data.frame()
+state_crime_pca_centers
+state_crime_pca_scores %>% 
+  select(Comp.1, Comp.2) %>%
+  ggplot(aes(Comp.1, Comp.2)) +
+  geom_point(aes(Comp.1, Comp.2, col = factor(state_crime_kmeans$cluster)),
+             size = 2, alpha = 0.5) +
+  geom_point(data = state_crime_pca_centers[, 1:2], aes(Comp.1, Comp.2),
+             pch = '+', size = 6) +
+  scale_color_discrete(name = "Predicted Cluster", labels = paste("Cluster", 1:4))
+```
+
+### 7.2.3 Spark K-means on the State Crime Data
+
+Load `state_crime.csv` into Spark with `spark_read_csv` from the local filesystem.
+```{r}
+state_crime_sdf <- spark_read_csv(sc, "state_crime_sdf",
+    path =  "file:///home/rstudio/rspark-tutorial/data/state_crime.csv")
+```
+
+The crime rates per 100,000 are extracted and scaled for each state.
+```{r}
+state_crime_std_sdf <- state_crime_sdf %>%
+  select(-State, -Abbr, -Division, -Region, -Unemploy, -Police, -InSchool) %>%
+  spark_apply(function(e) scale(e))
+class(state_crime_std_sdf)
+```
+The Spark K-means clustering is performed. The $k$-means centers are computed in the original feature space.
+```{r}
+state_crime_kmeans_model <- state_crime_std_sdf %>%
+  ml_kmeans(~ Murder + Rape + Robbery + Assault + Burglary + Larceny + Auto,
+            k = 4L)
+class(state_crime_kmeans_model)
+state_crime_kmeans_model$center
+```
+
+The predicted group memberships are computed.
+```{r}
+state_crime_kmeans_predict_sdf <- state_crime_std_sdf %>%
+  sdf_predict(state_crime_kmeans_model) %>%
+  select(prediction)
+state_crime_kmeans_predict_df <- state_crime_kmeans_predict_sdf %>%
+  collect()
+```
+
+We now plot the data in the 2-dim PCA space of the first two principal variables. Recall that the first two principal variables explain about 74.3\% of the variation. The points are colorized according to their group membership found by $k$-means. The centers of the four groups are also plotted in PCA space.
+```{r}
+state_crime_pca_proj <- ml_pca(state_crime_std_sdf, k = 2) %>%
+  sdf_project(state_crime_std_sdf)
+state_crime_kmeans_centers <- state_crime_pca_proj %>%
+  sdf_bind_cols(state_crime_kmeans_predict_sdf) %>%
+  group_by(prediction) %>%
+  summarise(
+    PC1 = mean(PC1, na.rm = TRUE),
+    PC2 = mean(PC2, na.rm = TRUE)
+  ) %>%
+  collect()
+state_crime_kmeans_centers[order(state_crime_kmeans_centers$prediction),]
+state_crime_pca_proj %>%
+  collect() %>%
+  ggplot(aes(-PC1, PC2)) +
+  geom_point(aes(-PC1, PC2,
+                 col = factor(state_crime_kmeans_predict_df$prediction + 1)),
+             size = 2, alpha = 0.5) +
+  geom_point(data = state_crime_kmeans_centers,
+             aes(-PC1, PC2),
+             pch = '+', size = 5) +
+  scale_color_discrete(name = "Predicted Cluster", labels = paste("Cluster", 1:4))
+```
+This plot agrees with the analysis in Section 8.2.2 except that we reversed the scale of PC2 and the clusters are labeled by different colors. These changes are not relevant to cluster identification.
+
+```{r}
+spark_disconnect(sc)
+```

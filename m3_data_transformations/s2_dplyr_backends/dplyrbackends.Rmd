@@ -1,0 +1,174 @@
+---
+title: "dplyr Backends"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+The `dplyr` provides a grammar of data manipulation using a set of verbs for transforming tibbles (or data frames) in R or across various backend data sources. For example, `dplyr` provides an interface to `sparklyr`, which is RStudio's R interface to Spark.
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+library(RPostgreSQL)
+library(sparklyr)
+```
+This section illustrates `dplyr` often using the NYC flight departures data as a context.
+```{r}
+library(nycflights13)
+```
+
+## 3.2 Data manipulation with `dplyr`
+
+A powerful feature of `dplyr` is its ability to operate on various backends, including databases and Spark among others.
+
+### 3.2.1 Databases
+
+`dplyr` allows you to use the same verbs in a remote database as you would in R. It takes care of generating SQL for you so that you can avoid learning it.
+
+The material for this subsection is taken from Hadley Wickham's [dplyr Database Vignette](https://github.com/hadley/dplyr/blob/master/vignettes/databases.Rmd).
+
+The reason you'd want to use `dplyr` with a database is because:  
+
+* your data is already in a database, or  
+* you have so much data that it does not fit in memory, or  
+* you want to speed up computations.  
+
+Currently `dplyr` supports the three most popular open source databases (`sqlite`, `mysql` and `postgresql`), and Google's `bigquery`. 
+
+If you have a lot of data in a database, you can't just dump it into R due to memory limitations. Instead, you'll have to work with subsets or aggregates. `dplyr` generally make this task easy.
+
+The goal of `dplyr` is not to replace every SQL function with an R function; that would be difficult and error prone. Instead, `dplyr` only generates `SELECT` statements, the SQL you write most often as an analyst for data extraction.
+
+Initially, we work with the built-in SQLite database.
+```{r}
+con <- DBI::dbConnect(RSQLite::SQLite(), dbname = ":memory")
+# contruct the database
+copy_to(con, nycflights13::flights, "flights", overwrite = TRUE)
+flights_db <- tbl(con, "flights")
+```
+`tbl` allows us to reference the database.
+
+We now calculate the average arrival delay by tail number.
+```{r}
+tailnum_delay_db <- flights_db %>% 
+  group_by(tailnum) %>%
+  summarise(
+    delay = mean(arr_delay),
+    n = n()
+  ) %>% 
+  arrange(desc(delay)) %>%
+  filter(n > 100)
+tailnum_delay_db
+```
+The calculations are not actually performed until `tailnum_delay_db` is requested.
+
+We will focus on `PostgreSQL` since it provides much stronger support for `dplyr`. This code will become operational once the `airlines` database is built.
+```
+# my_dbh is a handle to the airlines database
+# the airlines database is not yet built
+my_dbh <- src_postgres("airlines")
+
+# The following statement was run initially to put flights in the database
+# flights_pg <- copy_to(my_dbh, flights, temporary=FALSE)
+
+# tbl creates a table from a data source 
+flights_pg <- tbl(my_dbh, "flights")
+flights_pg
+```
+You can use SQL:
+```
+flights_out <- tbl(my_dbh, sql("SELECT * FROM flights"))
+```
+
+You use the five verbs:
+```
+select(flights_pg, year:day, dep_delay, arr_delay)
+filter(flights_pg, dep_delay > 240)
+# The comments below are only used to shorten the output.
+# arrange(flights_pg, year, month, day)
+# mutate(flights_pg, speed = air_time / distance)
+# summarise(flights_pg, delay = mean(dep_time))
+```
+The expressions in `select()`, `filter()`, `arrange()`, `mutate()`, and `summarise()` are translated into SQL so they can be run on the database.
+
+Workflows can be constructed by the `%>%` operator:
+```
+output <-
+  filter(flights_pg, year == 2013, month == 1, day == 1) %>%
+  select( year, month, day, carrier, dep_delay, air_time, distance) %>%
+  mutate(speed = distance / air_time * 60) %>%
+  arrange(year, month, day, carrier)
+collect(output)
+```
+This sequence of operations never actually touches the database. It's not until you ask for the data that `dplyr` generates the SQL and requests the results from the database. `collect()` pulls down all the results and returns a `tbl_df`.
+
+How the database execute the query is given by `explain()`:
+```
+explain(output)
+```
+
+There are three ways to force the computation of a query:  
+
+* `collect()` executes the query and returns the results to R.  
+* `compute()` executes the query and stores the results in a temporary table in the database.  
+* `collapse()` turns the query into a table expression.
+
+`dplyr` uses the `translate_sql()` function to convert R expressions into SQL.
+
+PostgreSQL is much more powerful database than SQLite. It has:  
+
+* a much wider range of built-in functions  
+* support for window functions, which allow grouped subsets and mutates to work.  
+
+We can perform grouped `filter` and `mutate` operations with PostgreSQL. Because you can't filter on *window functions* directly, the SQL generated from the grouped filter is quite complex; so they instead have to go in a subquery.
+```
+daily <- group_by(flights_pg, year, month, day)
+
+# Find the most and least delayed flight each day
+bestworst <- daily %>% 
+  select(flight, arr_delay) %>% 
+  filter(arr_delay == min(arr_delay) || arr_delay == max(arr_delay))
+collect(bestworst)
+explain(bestworst)
+
+# Rank each flight within a daily
+ranked <- daily %>% 
+  select(arr_delay) %>% 
+  mutate(rank = rank(desc(arr_delay)))
+collect(ranked)
+explain(ranked)
+```
+
+### 3.2.2 Spark
+
+Spark can be used as a data source using `dplyr`.
+```{r}
+sc <- spark_connect(master = "local")
+# Copy the R data.frame to a Spark DataFrame
+copy_to(sc, faithful, "faithful")
+faithful_tbl <- tbl(sc, "faithful")
+
+# List the available tables
+src_tbls(sc)
+```
+
+
+```{r}
+# filter the Spark DataFrame and use collect to return an R data.frame
+faithful_df <- faithful_tbl %>% 
+  filter(waiting < 50) %>%
+  collect()
+head(faithful_df)
+```
+
+This is a demonstration of getting the `faithful` data into Spark and the use of simple data manipulations on the data.
+
+The `sparklyr` package is the basis for data manipulation and machine learning based on a data frame workflow. This approach has limitations, but it covers most use cases.
+
+```{r}
+spark_disconnect(sc)
+```

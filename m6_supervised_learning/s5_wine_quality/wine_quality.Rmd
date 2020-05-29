@@ -1,0 +1,178 @@
+---
+title: "Wine Quality Regularized Logistic Regression"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+
+library(glmnet)
+library(dplyr)
+library(sparklyr)
+sc <- spark_connect(master = "local")
+```
+
+## 6.5 Wine Quality Logistic Regression
+
+This section explores feature selection based on regularization.
+
+### 6.5.1 Regularized Logistic Regression with Spark
+
+We now revisit the Wine Quality Data Set analyzed in Section 6.4.2. Our goal is to continue with advanced analyses.
+
+We read the `winequality-red.csv` file into a Spark DataFrame using `spark_red_csv`. We want to ensure the training and test data frames are identical to those in Section 6.4.2.
+```{r}
+wine_red_sdf <- spark_read_csv(sc, "wine_red_sdf",
+    path = "file:///home/rstudio/rspark-tutorial/data/wine/winequality-red.csv",
+    delimiter = ";" )
+wine_red_tbl <- sdf_register(wine_red_sdf, name = "wine_red_tbl")
+```
+
+We split `wine_red_sdf` into a training and a test Spark DataFrame as before and cast `quality` as numeric in order to binarize it with a threshold.
+```{r}
+wine_red_partition <- wine_red_tbl %>%
+  mutate(quality = as.numeric(quality)) %>%
+  ft_binarizer(input_col = "quality", output_col = "quality_bin",
+               threshold = 5.0) %>%
+  sdf_random_split(training = 0.7, test = 0.3, seed = 2)
+wine_red_train_sdf <- wine_red_partition$training
+wine_red_test_sdf <- wine_red_partition$test
+```
+
+The full model is now run on the training data.
+```{r}
+wine_red_br_full_model <- wine_red_train_sdf %>%
+  ml_logistic_regression(quality_bin ~ fixed_acidity + volatile_acidity
+                         + citric_acid + residual_sugar + chlorides
+                         + free_sulfur_dioxide + total_sulfur_dioxide
+                         + density + pH + sulphates + alcohol)
+summary(wine_red_br_full_model)
+```
+The coefficients and AUC can be extracted from the `ml_model` object by:
+```{r}
+wine_red_br_full_model$coefficients
+wine_red_br_full_model$summary$area_under_roc
+```
+However, it is preferable to use an evaluator, in this case `ml_binary_classification_evaluator`, to compute the performance metrics.
+```{r}
+wine_red_br_full_predict <- ml_predict(wine_red_br_full_model, wine_red_train_sdf)
+wine_red_br_auc <- data.frame(lambda = 0,
+                              auc = ml_binary_classification_evaluator(wine_red_br_full_predict))
+wine_red_br_coef <- as.data.frame(wine_red_br_full_model$coefficients[-1])
+wine_red_br_coef
+```
+Next we define a model function with the `reg_param` as an argument.
+```{r}
+wine_red_br_model <- function(l) {
+  wine_red_train_sdf %>%
+    ml_logistic_regression(quality_bin ~ fixed_acidity + volatile_acidity
+                           + citric_acid + residual_sugar + chlorides
+                           + free_sulfur_dioxide + total_sulfur_dioxide
+                           + density + pH + sulphates + alcohol,
+                           elastic_net_param = 1, reg_param = l)
+}
+```
+We are dealing with a lasso since the `elastic_net_param` is 1.
+
+We now calculate the `coefficients` and `auc` for each of the models.
+```{r}
+reg_parm <- c(0.0, 0.05, 0.1, 0.15, 0.2, 0.25)
+for(l in reg_parm) {
+  wine_red_br_fit <- wine_red_br_model(l)
+  wine_red_br_predict <- ml_predict(wine_red_br_fit, wine_red_train_sdf)
+  wine_red_br_auc <- data.frame(lambda = l,
+                        auc = ml_binary_classification_evaluator(wine_red_br_predict)) %>%
+    rbind(wine_red_br_auc, .)
+  wine_red_br_coef <- 
+    as.data.frame(wine_red_br_fit$model$coefficients) %>%
+    cbind(wine_red_br_coef, .)
+}
+wine_red_br_auc
+```
+We plot AUC, the chosen performance metric, against $\lambda$.
+```{r}
+library(ggplot2)
+wine_red_br_auc %>%
+  ggplot(aes(x = lambda)) +
+  geom_point(aes(y = auc, color = 'auc')) +
+  geom_line(aes(y = auc, color = 'auc')) +
+  ggtitle("Performance Metric for the Red Wine Regulated Models") +
+  xlab("Lambda") + ylab("AUC")
+```
+The AUC decreases with $\lambda$ and thus little if any regularization should be done.
+
+```{r}
+names(wine_red_br_coef) <- as.character(rbind(c(0.0, reg_parm)))
+wine_red_br_coef
+```
+
+The interpretation is better if we visualize the coefficient traces.
+```{r}
+library(ggplot2)
+as.data.frame(cbind(lambda = c(0.0, reg_parm), t(wine_red_br_coef))) %>%
+  ggplot(aes(x = lambda)) +
+  geom_line(aes(y = fixed_acidity, color = 'fixed_acidity')) +
+  geom_line(aes(y = volatile_acidity, color = 'volatile_acidity')) + 
+  geom_line(aes(y = citric_acid, color = 'citric_acid')) + 
+  geom_line(aes(y = residual_sugar, color = 'residual_sugar')) + 
+  geom_line(aes(y = chlorides, color = 'chlorides')) + 
+  geom_line(aes(y = free_sulfur_dioxide, color = 'free_sulfur_dioxide')) + 
+  geom_line(aes(y = total_sulfur_dioxide, color = 'total_sulfur_dioxide')) +
+  geom_line(aes(y = density, color = 'density')) +
+  geom_line(aes(y = pH, color = 'pH')) +
+  geom_line(aes(y = sulphates, color = 'sulphates')) +
+  geom_line(aes(y = alcohol, color = 'alcohol')) +
+  ggtitle("Parameter Trace for the Red Wine Regulated Models") +
+  xlab("Lambda") + ylab("Coef. Estimate")
+```
+
+The coefficients go to 0 very quickly. Based on regularization, `alcohol` and `density` are still standing at $\lambda = 0.2$, but then they too go to 0. However, for $\lambda > 0$ the AUC is degraded. 
+
+We now `collect` the training and test Spark DataFrames into R as regular data frames. If you experiment with `alpha` and `lambda`,i.e., invoke the elastic net, you will see the coefficients that are driven to 0 vary greatly. 
+```{r}
+wine_red_train_df <- collect(wine_red_partition$training)
+wine_red_test_df <- collect(wine_red_partition$test)
+```
+
+### 6.5.2 Regularized Logistic Regression with glmnet
+
+We can now use `glmnet` to model the wine quality.
+```{r}
+wine_red.x <- model.matrix(as.factor(quality_bin) ~ fixed_acidity 
+                           + volatile_acidity + citric_acid + residual_sugar
+                           + chlorides + free_sulfur_dioxide
+                           + total_sulfur_dioxide + density + pH + sulphates
+                           + alcohol, 
+                           data = wine_red_train_df)[, -1]
+wine_red.y <- wine_red_train_df$quality_bin
+
+wine_red_bin <- glmnet(x = wine_red.x, y = wine_red.y, family = "binomial",
+                       alpha = 1, lambda = c(0.0, 0.05, 0.1, 0.15, 0.2),
+                       standardize = TRUE)
+coef(wine_red_bin, s = c(0.0, 0.05, 0.1, 0.15, 0.2))
+```
+Based on feature importance, `alcohol`, was indeed most important. You can experiment with different values of `alpha` and `lambda`.
+
+```{r}
+wine_red_glm_lasso_cv <- cv.glmnet(x =  wine_red.x, y = wine_red.y, family = "binomial",
+                                   nfolds = 10, standardize = TRUE,
+                                   type.measure = "auc", alpha = 1,
+                                   lambda = c(0.0, 0.05, 0.1, 0.15, 0.2))
+wine_red_glm_lasso_cv$lambda.min
+```
+`glmnet` confirms that no regularization is needed and thus no variable selection is done. At this point it is not clear how to proceed since the standard errors of the coefficient estimates are not available and thus testing is not possible. 
+
+Since we do not have a well-determined final model, we will not compute predictions or performance metrics on the test data set. Of course `glm` in base R was used in Section 6.4.2. `pH`, `density`, and `residual_sugars` were removed using AIC as a criterion, but further analysis is needed. `ml_generalized_linear_regression` does provide information on the AIC and thus could also be used for variable selection as was done in Section 6.4.2.
+
+```{r}
+spark_disconnect(sc)
+```
+

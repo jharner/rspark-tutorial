@@ -1,0 +1,257 @@
+---
+title: "Principal Component Analysis"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(readr)
+library(sparklyr)
+sc <- spark_connect(master = "local")
+```
+
+## 7.1 Principal Component Analysis (PCA)
+
+### 7.1.1 PCA Basics
+
+Principal Component Analysis (PCA) is used to determine the structure of a multivariate data set composed of numerical variables. Specifically, the most important purposes of PCA are:   
+1. to reduce the dimensionality of variable space;    
+2. to find the linear combinations of the original variables which account for most of the variation in the multivariate system.  
+
+Let $X_1, X_2, \ldots. X_p$ be numerical variables (or features). The object is to find derived variables, $V_1, V_2, \ldots, V_t\, (t \leq p)$, such that the $V_j$ are uncorrelated and have successively smaller variances, i.e.,
+$$
+{\rm var}(V_1) \geq {\rm var}(V_2) \geq \cdots \geq {\rm var}(V_t).
+$$
+The $V_j$ are in variable space and are called principal variables. The
+development is given initially in terms of the sample covariance matrix.
+Generalizations are then given.
+
+The first principal variable is the linear combination of the $X_j$ with
+maximum variance. Define  
+$$
+V_1 =  a_{11}X_1 + a_{21}X_2 + \cdots + a_{p1}X_p =  {\bf a}_1^\prime X
+$$
+such that ${\rm var}(V_1) = {\bf a}_1^\prime{\bf Sa}_1$ is
+maximized with respect to ${\bf a}_1$. But ${\rm var}(V_1)$ can be made
+arbitrarily large by choosing ${\bf a}_1$ such that $\| {\bf a}_1 \|$ is
+large. We thus normalize ${\bf a}_1$ such that $\|{\bf a}_1 \|^2 = {\bf
+a}_1^\prime {\bf a}_1 =1$. Thus, the coefficients of $V_1$ are found from
+$$
+\max_{\mathbf{a}}(\mathbf{a}^\prime \mathbf{Sa})
+$$
+subject to \({\bf a}^\prime{\bf a} =1\), or equivalently,
+$$
+   \max_{\mathbf{a}}
+    (\frac{\mathbf{a}^\prime \mathbf{Sa}}
+          {\mathbf{a}^\prime \mathbf{a}}).
+$$
+
+The maximum is $l_1$, the largest eigenvalue of ${\bf S}$. The corresponding
+normalized eigenvector is ${\bf a}_1$. Thus the eigenvector corresponding to
+the largest eigenvalue determines the first principal variable and
+$$
+   \text{var}(V_1) = \mathbf{a}_1^\prime\mathbf{Sa}_1 = l_1.
+$$
+
+The next problem is to determine the normalized linear combination
+$$
+   V_2 = {\bf a}_2^\prime X,
+$$
+which has the largest variance in the class of all normalized components
+orthogonal to \(V_1\) (i.e., constrained by \({\bf a}_1^\prime{\bf a}_2 = 0\)).
+Geometrically, the axes are perpendicular. The maximum variance is \(l_2\), the
+second largest eigenvalue of \({\bf S}\). The corresponding normalized
+eigenvector is \({\bf a}_2\).
+
+The process can be continued until \(t \leq p\) principal variables are found.
+The \(j^{th}\) principal variable is defined by
+$$
+   V_j = {\bf a}_j^\prime X.
+$$
+Its variance is \(l_j\), the \(j^{th}\) largest eigenvalue of \({\bf S}\). This
+last result follows from the eigenvalue problem, since
+$$
+   {\rm var}(V_j) = {\bf a}_j^\prime{\bf Sa}_j = l_j{\bf a}_j^\prime{\bf a}_j
+	                 = l_j,
+$$
+where \({\bf a}_j\) is the  normalized eigenvector corresponding to \(l_j\).
+Also,
+$$
+   \mbox{cov}(V_j, V_k) = {\bf a}_j^\prime{\bf Sa}_k = 0
+$$
+for \(j \neq k\), since \({\bf a}_j^\prime{\bf Sa}_k = l_k{\bf a}_j^\prime{\bf
+a}_k = 0\)
+by the constraint. Thus, \(V_1, V_2, \ldots, V_t\) are uncorrelated and they are
+ordered by decreasing variability.
+
+PCA reduces analytically to finding the eigenvalue (spectral) decomposition of
+\({\bf S}\) given by:
+$$
+   {\bf S} = {\bf A}{\bf D}_{l_j}{\bf A}^\prime,
+$$
+where the eigenvectors are the columns of \({\bf A}\) and the eigenvalues are
+the diagonal elements of \({\bf D}_{l_j}\) (a diagonal matrix). However, the
+eigenvalue decomposition does not provide the values of the principal variables
+directly, nor is it the recommended numerical solution. The singular value
+decomposition is numerically more stable and it provides more information.
+
+The centered data matrix is scaled by $\sqrt{n-1}$ to simplify the interpretation of the subsequent matrix decomposition. Using the ``scaled'' centered data matrix, ${\bf X}_c^\prime{\bf X} = {\bf S}.$ is given by
+$$
+   {\bf X}_c = \frac{1}{\sqrt{n - 1}}({\bf X} - {\bf \bar{X}}).
+$$
+The singular value decomposition of the centered data matrix is then:
+$$
+   {\bf X}_c = {\bf VD}_{d_j}{\bf A}^\prime,
+$$
+where $d_1 \geq d_2 \geq \cdots \geq d_p \geq 0$ are the singular values, and
+the columns of ${\bf V}$and ${\bf A}$ are the left and right singular
+vectors, respectively.
+$$
+   {\bf S} = {\bf X}_c^\prime{\bf X}_c
+           = {\bf A}{\bf D}_{d_j^2}{\bf A}^\prime
+           = {\bf A}{\bf D}_{l_j}{\bf A}^\prime,
+$$
+since ${\bf V}$ is orthonormal. Thus, the right singular vectors of ${\bf
+X}_c$ are the eigenvectors of ${\bf S}$, and the singular values are the
+square roots of the eigenvalues. Also, the values of the principal variables are
+given by
+$$
+   {\bf X}_c{\bf A} = {\bf V} {\bf D}_{d_j},
+$$
+i.e., the $j^{th}$ column of ${\bf V} {\bf D}_{d_j}$ gives the centered
+values of the $j^{th}$ principal variable.
+
+Many variants of principal component analysis are possible. The most common is to
+center and standardize the dataset. Let:
+$$
+   {\bf X}_{s} = \frac{1}{\sqrt{n - 1}}({\bf X} - {\bf \bar{X}}){\bf D}_{1/s_j},
+$$
+where ${\bf D}_{1/s_j}$ is diagonal with the reciprocals of the standard
+deviations of the $Y_j$on the diagonal.
+
+The singular value decomposition of the standardized centered data matrix is given by
+$$
+   {\bf X}_{s} = {\bf V}_s{\bf D}_{d_j^s}{\bf A}_s^\prime,
+$$
+where the columns of ${\bf V}_s$ are the left singular vectors, the columns of
+${\bf A}_s$ are the right singular vectors, and the $d_j^s$ are the
+singular values.
+
+Doing a singular value decomposition on ${\bf X}_{s}$ is equivalent to
+performing an eigenvalue decomposition on the sample correlation matrix ${\bf
+R}$. This follows since ${\bf R} = {\bf X}_s^\prime{\bf X}_s$; the
+decomposition is
+$$
+   {\bf R} = {\bf A}_s{\bf D}_{l_j^s}{\bf A}_s^\prime,
+$$
+where $l_j^s = (d_j^s)^2$. The sample correlation matrix is the sample covariance matrix of the $Y_j^s$, i.e, the standardized variables. Note that neither the eigenvalues or eigenvectors of the standardized variables are equivalent to those for the original variables. However, the number of non-zero eigenvalues does not depend on the scaling.
+
+The Spark algorithms are based on the standardized variables. This is done to ensure that the variables are on the same scale.
+
+#### Geometric Interpretation for Dimension Reduction
+
+Principal component analysis can be viewed as a method of fitting subspaces of
+${\rm dim}\,t \leq p$ to the data. Consider the case in which $p = 2$. Let
+the orthogonal distance from ${\bf x}_i$ to the coordinate defined by
+$V_1$ be $d_{i1}$. The eigenvector associated with the largest
+eigenvalue can be found by minimizing $\sum d_{i1}^2$. Notice that
+$d_{i1}$ is equal to the projection of ${\bf x}_i$ onto $V_2$. Thus,
+$$
+   d_{i1}^2 = [{\bf a}_2^\prime({\bf x}_i - {\bf \bar{x}})]^2.
+$$
+
+This process can be repeated. In general,
+$$
+d_{it}^2 = \sum_{j=t+1}^p [{\rm a}_j^\prime 
+                  	[({\bf x}_i - \bar{\bf x})]^2
+$$
+i.e., $d_{it}^2$ is the lack-of-fit of the $i^{th}$ individual from
+the $t$-dimensional space spanned by $V_1, V_2, \ldots, V_t$.
+
+A $t$-dimensional subspace may account for most of the variation in a system.
+Nonetheless, certain ${\bf x}_i$ may not lie near this subspace as indicated by
+large $d_{it}^2$. Outliers in the $(p-t)$-dimensional space orthogonal to
+$V_1, V_2, \ldots, V_t$ can be identified by a gamma probability plot. The
+$d_{it}^2$ approximately follow a gamma distribution with a shape parameter
+which must be estimated from the data (i.e., the shape parameter is not
+$(p-t)/2$).
+
+### 7.1.2 PCA on the State Crime Data
+
+Read in the crime data for the 50 states:
+```{r}
+state_crime_df <- read_csv("/home/rstudio/rspark-tutorial/data/state_crime.csv")
+```
+We remove all variables except the those recording crime per 100,000 residents. These variables are then standardized using the R function `scale`.
+```{r}
+state_crime_std_df <- state_crime_df %>%
+  select(-State, -Abbr, -Division, -Region, -Unemploy, -Police, -InSchool) %>%
+  lapply(function(e) scale(e)) %>%
+  as.data.frame()
+```
+The PCA is done on the standardized variables (equivalent to a PCA on the correlation matrix).
+```{r}
+state_crime_pca <- princomp(state_crime_std_df) %>%
+  print()
+```
+The standard deviation of the principal variables (the singular values) are extracted and the cumulative percentage of the variability explained is printed.
+```{r}
+state_crime_var <- state_crime_pca$sdev^2
+cumsum(state_crime_var)/sum(state_crime_var)
+```
+The variable loadings, i.e., the variable coefficients, for the first four principal variables are extracted.
+```{r}
+state_crime_pca$loadings[, 1:4]
+```
+
+The centers and scores can also be extracted for the first four principal variables.
+```{r}
+head(as.data.frame(state_crime_pca$scores))
+```
+
+### 7.1.3 Spark PCA on the State Crime Data
+
+Load `state_crime.csv` into Spark with `spark_read_csv` from the local filesystem.
+```{r}
+state_crime_sdf <- spark_read_csv(sc, "state_crime_sdf",
+    path =  "file:///home/rstudio/rspark-tutorial/data/state_crime.csv")
+```
+
+The crime rates per 100,000 are extracted for each state.
+```{r}
+state_crime_std_sdf <- state_crime_sdf %>%
+  select(-State, -Abbr, -Division, -Region, -Unemploy, -Police, -InSchool) %>%
+  spark_apply(function(e) scale(e))
+```
+
+The Spark PCA (`ml_pca`) is run.
+```{r}
+state_crime_pca_model <- ml_pca(state_crime_std_sdf, k = 4) 
+class(state_crime_pca_model)
+```
+
+The eigenvalues (squares of the singular values) are the variances of the principal variables. The rotation matrix specifies the component loadings.
+
+The cumulative sums estimate the variance explained by the first $k$ principal variables, $k = 1, 2, \ldots, p$.  
+```{r}
+cumsum(state_crime_pca_model$explained_variance)
+```
+The first two principal variables explain 74.3\% of the variation, whereas the first three explain 84.1\% of the variation. Thus, we have reduced the dimensionality from $p = 7$ to 3 or 4 dimensions, but with some loss of variation.
+
+We next want to project the data orthogonally into the fitted hyperplane.
+```{r}
+state_crime_pca_model$pc
+state_crime_pca_proj <- sdf_project(state_crime_pca_model, state_crime_std_sdf)
+state_crime_pca_proj
+```
+The `sdf_project` function gives the PCA scores, which than can be used as reduced-dimension features.
+
+```{r}
+spark_disconnect(sc)
+```

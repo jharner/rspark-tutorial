@@ -1,0 +1,184 @@
+---
+title: "Naive Bayes"
+author: "Jim Harner"
+date: "1/6/2020"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+`sparklyr` requires a `dplyr` compatible back-end to Spark.
+```{r}
+library(dplyr, warn.conflicts = FALSE)
+library(tidyr)
+library(modelr)
+library(ggplot2)
+
+library(sparklyr)
+# start the sparklyr session
+master <- "local"
+# master <- "spark://master:7077"
+sc <- spark_connect(master)
+```
+
+## 6.8 Naive Bayes
+
+### 6.8.1 Basics
+
+Naive Bayes is a classification method that scales well.
+
+#### Bayes Law
+
+Suppose we are testing for a rare disease, where 1% of the population is infected. Now suppose we have a highly sensitive test:
+
+* 99% of sick patients test positive.  
+* 99% of healthy patients test negative. 
+
+Given that a patient tests positive, what is the probability that the patient is actually sick?
+
+Suppose we have 10,000 perfectly representative people. That would mean that 100 are sick, and 9,900 are healthy.
+
+From basic probability:
+$$
+  p(x, y) = p(y\, |\, x)p(x) = p(x\, |\, y)p(y)
+$$
+Solving for $p(y\, |\, x)$ we get *Bayes's Law*:
+$$
+  p(y\, |\, x) = \frac{p(x\, |\, y)p(y)}{p(x)}
+$$
+The denominator term, $p(x)$, can be treated as a *normalization* constant. Set $y$ to to the event "sick" and set $x$ to refer to the event "the test is positive," or "+" for shorthand. Then:  
+$$
+\begin{align*}
+  p(sick\, |\, +) &= \frac{p(+\, |\, sick)p(sick)}{p(+)}
+              &= \frac{p(+\, |\, sick)p(sick)}{p(+\, |\, sick)p(sick) + p(+\, |\, well)p(well)}
+              &= \frac{0.99 \cdot 0.01}{0.99 \cdot 0.01 + 0.01 \cdot 0.99}
+              &= 0.5
+\end{align*}
+$$
+Are you surprised?
+
+#### A spam filter for individual words
+
+We can use Bayes Law to create a spam filter. Let's focus on a single word.
+$$
+  p(spam\, |\, word)  = \frac{p(word\, |\, spam) p(spam)}{p(word)}
+                  = \frac{p(word\, |\, spam) p(spam)}{p(word\, |\, spam) p(spam) 
+                    + p(word\, |\, ham) p(ham)},
+$$
+where $p(ham) = 1 - p(spam$). The right hand side is computable if we have enough labeled data, i.e., if we have training data in which the emails are known to be "spam" or "ham".
+
+#### A Spam Filter That Combines Words: Naive Bayes
+
+We now need to combine words to detect spam. Let: $x = [x_1, x_2, \cdots, x_p]$ be a binary word vector, where $x_j = 1$ or $0$ depending on weather or not the $j^\mbox{th}$ word appears in the email.
+
+Let $c$ denote the event ``is spam.'' The probability model of interest is $p(x\, |\, c)$, i.e., the probability the email's word vector is $x$ given that it is spam. For the $i^{\mbox{th}}$ email:
+$$
+  p(x_i\, |\, c) = \prod_j \theta_{jc}^{x_{ij}} (1 - \theta_{jc})^{(1 - x_{ij})},
+$$
+where $\theta_{jc}$ is the probability the $j^{\mbox{th}}$ word is present in spam email. These probabilities can be computed from the training data set on word-by-word basis as above.
+
+This calculation assumes word *independence*. This is why we use the word ``naive'' is used, i.e., certain words tend to appear together, which implies dependence.
+
+By taking logs:
+$$
+  log(p(x_i\, |\, c)) = \sum_j x_{ij} log(\theta_{jc} / (1 - \theta_{jc})) + \sum_j log(1 - \theta_{jc}).
+$$
+Let $w_{jc} = log(\theta_{jc} / (1 - \theta_{jc}))$ and $w_{0c} = \sum_j log(1 - \theta_{jc})$, neither of which depend on a given email. Then,
+$$
+  log(p(x_i\, |\, c)) = \sum_j x_{ij} w_{jc} + w_{0c}.
+$$
+This is in the form of a *generalized additive model*.
+
+Now that we know how to compute $p(x_i\, |\, c)$, we can use Bayes' Law to compute $p(c\, |\, x_i)$. We must also compute $p(x_i\, |\, h)$, where $h$ denotes ``is ham.'' Basically, we are just counting the words in spam and nonspam emails. If we get more training data, we can easily increment our counts to improve our filter.
+
+#### Laplace Smoothing
+
+In the previous section, $\hat\theta_{jc} = n_{jc}/ n_c$, where $n_{jc}$ denotes the number of times word $j$ appears in a spam email and $n_c$ denotes the number of spam emails. In addition, $\hat{\theta}_{jh} = 1 - \hat{\theta}_{jc}$.
+
+*Laplace Smoothing* refers to the idea of replacing our straight-up estimate of $\hat{θ}_j$ with something a bit fancier:  
+$$
+  \hat{\theta}_{jc} = \frac{n_{jc} + \alpha}{n_c + \beta},
+$$
+where $\alpha \ge 0$ and $\beta \ge 0$ are smoothing parameters to avoid having the probability equal 0 or 1. Suppose we denote by `ML` the *maximum likelihood estimate*, and by $D$ the dataset, then we have:
+$$
+  \theta_{ML} = argmax_{\theta}\  p(D\, |\, \theta_{jc}),
+$$
+that is for what value of $\theta_{jc}$ were the data $D$ most probable.
+
+If we take the derivative of $log(\theta_{jc}^{n_{jc}} (1 - \theta_{jc})^{n_c - n_{jc}})$ with respect to $\theta_{jc}$, and set it to zero, we get:
+$$
+  \hat{\theta}_{jc} = n_{jc}/n_c,
+$$
+which is what we intuitively used before if independence is assumed.
+
+If we put a prior on $\theta_{jc}$, the *a posteriori* distribution is given by:
+$$
+  p(\theta\, |\, D) =  k \times p(D\, |\, \theta) p(\theta),
+$$
+where $k$ is a constant and $p(\theta)$ is the prior (the subscripts are dropped below to simplify the notation). The Bayes estimator is the maximum $\theta$ given the data, i.e., the *maximum a posteriori likelihood* (MAP) is given by:
+$$
+  \theta_{MAP} = argmax_{\theta}\, p(\theta\, |\, D).
+$$
+
+If the prior is chosen to be:
+$$
+  p(\theta) = \theta^{\alpha}(1 - \theta)^{\beta},
+$$
+then we get the above Laplacian estimate.
+
+How are $\alpha$ and $\beta$ chosen? Generally, we want $\alpha > 0$ and $\beta > 0$ so that the distribution vanishes as 0 and 1. This means that we get few words that never appear or always appear in spam. Likewise we do not want $\alpha$ and $\beta$ to be too large 
+
+$\alpha$ and $\beta$ are called *hyperparameters* or in this case *pseudocounts*. These give you two smoothing knobs. The curse of dimensionality resulting from large feature sets is not a problem for naive Bayes.
+
+The form of the Laplace smoother is often:
+$$
+  \hat{\theta}_{jc} = \frac{n_{jc} + \alpha}{n_c + \alpha d},
+$$
+where $\alpha \ge 0$ is the smoothing parameter and $d$ is the number of levels of the classification variable, e.g., $d = 2$ here. This additive smoothing is a *shrinkage estimator*, which shrinks the estimate from $n_{jc}/n_c$ to the uniform probability $1/d$. Often $\alpha = 1$ is used, i.e., *add-one smoothing*.
+
+
+### 6.8.2 Naive Bayes Wine Quality Example
+
+Read the `winequality-red.csv` file directory into a Spark DataFrame using `spark_red_sdf`.
+```{r}
+wine_red_sdf <- spark_read_csv(sc, "wine_red_sdf",
+                               path = "file:///home/rstudio/rspark-tutorial/m6_supervised_learning/s8_nbayes/wine/winequality-red.csv",
+                               delimiter = ";" )
+wine_red_tbl <- sdf_register(wine_red_sdf, name = "wine_red_tbl")
+```
+
+We split `wine_red_sdf` into a training and a test Spark DataFrame. First, we need to cast `quality` as numeric in order to binarize it with a threshold.
+```{r}
+wine_red_partition <- wine_red_tbl %>%
+  mutate(quality = as.numeric(quality)) %>%
+  ft_binarizer(input_col = "quality", output_col = "quality_bin",
+               threshold = 5.0) %>%
+  sdf_partition(training = 0.7, test = 0.3, seed = 2)
+# Create table references
+wine_red_train_tbl <- wine_red_partition$training
+wine_red_test_tbl <- wine_red_partition$test
+```
+
+The default naive bayes classifier has a smoothing parameter of `lambda = 0`.
+```{r}
+## Specify the model formula
+ml_formula <- formula(quality_bin ~ fixed_acidity + volatile_acidity +
+                        citric_acid + free_sulfur_dioxide +
+                        total_sulfur_dioxide + sulphates + alcohol)
+## Naive Bayes
+ml_nb <- ml_naive_bayes(wine_red_train_tbl, ml_formula)
+summary(ml_nb)
+```
+
+We apply Laplace smoothing to the estimates with the commonly used `lambda = 1`.
+```{r}
+ml_nb <- ml_naive_bayes(wine_red_train_tbl, ml_formula, smoothing = 1)
+summary(ml_nb)
+```
+
+```{r}
+spark_disconnect(sc)
+```
