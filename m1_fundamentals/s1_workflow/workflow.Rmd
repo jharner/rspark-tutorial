@@ -3,6 +3,7 @@ title: "Data Science Workflows"
 author: "Jim Harner"
 date: "1/6/2020"
 output:
+  pdf_document: default
   html_document: default
 ---
 
@@ -18,17 +19,23 @@ This data science tutorial spans the entire data science workflow or process. A 
 
 This diagram is taken from [Doing Data Science](http://shop.oreilly.com/product/0636920028529.do) by Cathy O'Neil and Rachel Schutt.
 
-This tutorial initially will focus on the items along the top, i.e., raw data is collected, data is processed, and data is cleaned. Exploratory data analyses will also be covered. We then cover the box on the right---machine learning algorithms and statistical models. We also cover data visualization in the lower right box.
+This tutorial initially will focus on the items along the top, i.e., raw data is collected, data is processed, and data is cleaned. Exploratory data analyses will also be covered. We then cover the box on the right---machine learning algorithms and statistical models (see below). We also cover data visualization in the lower right box. Ultimately, the purpose of data science is to build data products at scale, but this tutorial does not (yet) cover this topic.  
 
-Hadley Wickham has a more abbreviated and specific version in his book: [R for Data Science](http://r4ds.had.co.nz/introduction.html#what-you-will-learn). Hadley's workflow is based on functions which use tibbles---a type of data frame amenable to big, rectangular data---as inputs and outputs, much like UNIX pipes use standard input and output. This functionality is captured in a collection of packages called the tidyverse, which is also an R package of the same name. The `tidyverse` package automatically loads the most common tidyverse packages.
+![Machine Learning Algorithms](figures/MachineLearningAlgorithms.png)
 
-We focus on on certain R packages in the tidyverse, e.g., `tidyr` to clean data, `dplyr` for transforming the data, `ggplot2` for visualization, `modelr` and `broom` for modeling, and various import packages among others. We use R markdown and R notebooks for communicating results, which may contain embedded graphics based on packages such as `ggplot2`. We will often be using Hadley's approach in this course.  
+Hadley Wickham has a more abbreviated and specific version of the data science workflow in his book: [R for Data Science](http://r4ds.had.co.nz/introduction.html#what-you-will-learn).
+
+![Hadley's Data Science Workflow](figures/data-science.png)
+
+Hadley's workflow is based on functions which use tibbles---a type of data frame amenable to big, rectangular data---as inputs and outputs, much like UNIX pipes use standard input and standard output. This functionality is captured in a collection of packages called the tidyverse, which is also an R package of the same name. The `tidyverse` package automatically loads many of the common tidyverse-compatible packages.
+
+We focus on on certain R packages in the tidyverse, e.g., `tidyr` to clean data, `dplyr` for transforming the data, `ggplot2` for visualization, `modelr` and `broom` for modeling, and various import packages among others. We use R markdown and R notebooks for communicating results, which may contain embedded graphics based on packages such as `ggplot2`. We will often be using Hadley's approach in this tutorial.  
 
 ### 1.1.1 Data Science Environments  
 
 Data science requires a number of computing environments to analyze and visualize large, complex data derived from a variety of sources. For the most part, data science is built on open-source software, an approach we use here. The principal software environments used are R and Spark. I use the word "environment" here to mean extensibility, primarily through packages. However, R and Spark are more appropriately called  ecosystems since each has a large numbers of supporting components, such as the database PostgreSQL. 
 
-We choose R (rather than Python) as a high-level programming language, partly because it is a highly-developed statistical programming environment, but primarily since it is a functional language. This makes R adept at building data workflows using R's pipe operator, `%>%` and ML pipelines.
+We choose R (rather than Python) as a high-level programming language, partly because it is a highly-developed statistical programming environment, but primarily since it is a functional language. This makes R adept at building data workflows using R's pipe operator, `%>%`, for data manipulation and machine learning (ML) workflows.
 
 R has a vast collection of functions and packages for doing almost anything with any type of data. Due to initial design trade-offs, R (and Python) use a single-core execution engine. There are many ways to parallelize R for scientific purposes, and this capability has now been extended to Spark. Not only has R been integrated into Spark, but many R packages can be run within Spark.
 
