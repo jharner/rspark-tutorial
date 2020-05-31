@@ -1,10 +1,10 @@
 ---
 title: "Binary Data"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/30/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
