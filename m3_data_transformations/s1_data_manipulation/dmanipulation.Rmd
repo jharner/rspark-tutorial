@@ -1,10 +1,10 @@
 ---
 title: "Data Manipulation"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/30/2020"
 output:
+  pdf_document: default
   html_document: default
-  html_notebook: default
 ---
 
 ```{r setup, include = FALSE}

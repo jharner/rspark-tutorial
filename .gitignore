@@ -5,3 +5,6 @@
 *.Rproj
 *.html
 *.nb.html
+*.log
+:memory
+metastore_db
