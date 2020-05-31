@@ -1,8 +1,9 @@
 ---
 title: "RStudio Server"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/30/2020"
 output:
+  pdf_document: default
   html_document: default
 ---
 
@@ -12,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 1.2 RStudio Server
 
-RStudio is a powerful integrated development environment (IDE) primarily used for developing code for R projects, including R packages. RStudio supports the integration of R, Python, bash, and SQL code chunks within Rmarkdown documents (and notebooks), among other languages.
+RStudio is a powerful integrated development environment (IDE) primarily used for developing code for R projects, including R packages. RStudio supports the integration of R, Python, bash, and SQL code chunks,among other languages, within Rmarkdown documents (and notebooks).
 
 As a frontend to R, it can be run on your local machine (Mac or Windows) natively, but this is difficult for doing data science, which requires a vast number of add-on components. As a result, we use RStudio Server, which runs on Linux and is accessed with a web-based client.
 
@@ -46,7 +47,7 @@ Detailed instructions for running `rspark` on AWS are available here: [AWS rspar
 
 The pre-built image on AWS is called `rsparkbox` and it contains this tutorial. Once you follow the steps in the directions, connect to your `rspark` server through a web browser.
 
-**Note** If you are given an IP address for you instance, enter it into your browser's URL bar as 'http://0.0.0.0:8787' replacing '0.0.0.0' with the IP address of your instance. In this case you do not need an AWS account. Log into RStudio with the credentials:
+**Note** If you are given an IP address for your instance, enter it into your browser's URL bar as 'http://0.0.0.0:8787' replacing '0.0.0.0' with the IP address of your instance. In this case you do not need an AWS account. Log into RStudio with the credentials:
 
 		username: rstudio
 		password: rstudiojh
@@ -67,7 +68,7 @@ In order to preserve your workspace and leave your files on the instance itself:
 4. Click `Instance State`; 
 5. Select `Stop`.
 
-This will suspend your instance, rather than terminate it. You will be charged a small amount per hour for storage when your instance remains suspended (typically fractions of a cent per day.)
+This will suspend your instance, rather than terminate it. You will be charged a small amount per hour for storage when your instance remains suspended (typically fractions of a cent per day).
 
 When you are ready to work again:  
 
