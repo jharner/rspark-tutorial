@@ -1,10 +1,10 @@
 ---
 title: "Naive Bayes"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/31/2020"
 output:
+  pdf_document: default
   html_document: default
-  html_notebook: default
 ---
 
 ```{r setup, include=FALSE}
@@ -163,7 +163,7 @@ wine_red_test_tbl <- wine_red_partition$test
 ```
 
 The default naive bayes classifier has a smoothing parameter of `lambda = 0`.
-```{r}
+```
 ## Specify the model formula
 ml_formula <- formula(quality_bin ~ fixed_acidity + volatile_acidity +
                         citric_acid + free_sulfur_dioxide +
@@ -174,7 +174,7 @@ summary(ml_nb)
 ```
 
 We apply Laplace smoothing to the estimates with the commonly used `lambda = 1`.
-```{r}
+```
 ml_nb <- ml_naive_bayes(wine_red_train_tbl, ml_formula, smoothing = 1)
 summary(ml_nb)
 ```
