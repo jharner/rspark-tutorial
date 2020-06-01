@@ -1,8 +1,9 @@
 ---
 title: "Linear Regression"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/31/2020"
 output:
+  pdf_document: default
   html_document: default
 ---
 
@@ -42,7 +43,7 @@ The observed errors or *residuals* are given by:
 $$
   e_i = y_i - \hat{y}_i,
 $$
-where $\hat{y}_i = \hat\beta_0 + \hat\beta_1 x_{i1} + \cdots + \hat\beta_p x_{ip}$ is the predicted value for the $i^\mbox{th}$ observation.
+where $\hat{y}_i = \hat\beta_0 + \hat\beta_1 x_{i1} + \cdots + \hat\beta_p x_{ip}$ is the predicted value for the $i^{th}$ observation.
 
 The residual sum of squares is given by
 $$
@@ -68,7 +69,7 @@ The principal hypothesis of interest is:
 $$
   H_o: \beta_j = 0 \mbox{ vs. } H_a: \beta_j \ne 0,
 $$
-i.e., the coefficient for the $j^\mbox{th}$ predictor is 0. In order to test this hypothesis, we compute a $t$-test as follows:
+i.e., the coefficient for the $j^{th}$ predictor is 0. In order to test this hypothesis, we compute a $t$-test as follows:
 $$
   t = \frac{\hat \beta_j}{\mbox{s.e.} (\hat \beta_j)},
 $$

@@ -5,6 +5,7 @@
 *.Rproj
 *.html
 *.nb.html
+*.tex
 *.log
 *.md
 :memory
