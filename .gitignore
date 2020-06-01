@@ -6,5 +6,6 @@
 *.html
 *.nb.html
 *.log
+*.md
 :memory
 metastore_db

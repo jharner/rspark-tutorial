@@ -1,10 +1,9 @@
 ---
 title: "Data Storage (Hive and HBase)"
 author: "Jim Harner"
-date: "1/6/2020"
+date: "5/30/2020"
 output:
   html_document: default
-  html_notebook: default
 ---
 
 ```{r setup, include=FALSE}
