@@ -10,3 +10,4 @@
 *.md
 :memory
 metastore_db
+*.bbprojectd
