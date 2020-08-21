@@ -8,6 +8,7 @@
 *.tex
 *.log
 *.md
+*bbprojectd
 :memory
 metastore_db
 *.bbprojectd
