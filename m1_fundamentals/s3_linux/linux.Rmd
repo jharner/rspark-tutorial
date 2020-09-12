@@ -1,10 +1,10 @@
 ---
 title: "Linux"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/12/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -49,7 +49,9 @@ pwd
 echo -e "\nthe list of the files and subdirectories in your login ($HOME) directory"
 ls
 ```
-`pwd` prints the working directory, which is the directory containing the file we opened, i.e., `linux.Rmd`. We then change directory (`cd`) to the home (login) directory using the `HOME` environmental variable, also denoted by `~`. You should now be in the directory `/home/rstudio`, where `rstudio` is your login name. The directory contents is given by `ls`, which lists the files and sub-directories in your home directory.
+`pwd` prints the working directory, which by default is the directory containing the file we opened, i.e., `linux.Rmd`. `echo` sends what follows in quotes to standard output. The `-e` option allows backslash escapes, which in this case create a new line where specified by `\n`. For reference: `\b` removes spaces between text segments; `\c` suppresses the training new line; `\t` creates horizontal tabs, etc.
+
+We then change working directory with `cd` to your home (login) directory using the `HOME` environmental variable, also denoted by `~`. You should now be in the directory `/home/rstudio`, where `rstudio` is your login name. The directory contents is given by `ls`, which lists the files and sub-directories in your home directory.
 
 Once you go to another bash or R code chunk, you are back in the directory containing the file you are editing, i.e., `linux.Rmd` here. Let's get more detail on the files and directories in your working directory. This can be done using the `-al` options with `ls`, or `ls -a -l` if you prefer. Also, let's list the files in your home directory without changing directories (your output will differ from my login directory).
 ```{bash}

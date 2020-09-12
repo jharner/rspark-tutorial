@@ -1,10 +1,10 @@
 ---
 title: "Data Science Workflows"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/11/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -45,6 +45,6 @@ Spark has become the *de facto* standard for data science, just as R has become 
 
 For our purposes a platform should have all the components needed to do data science. There are two choices: a pre-built commercial distribution, e.g., Cloudera, or an open-source distribution. Cloudera is an excellent distribution and is feature complete. However, it does require a substantial amount of support for deployment and maintenance. In addition, running Cloudera on a physical cluster limits its flexibility, particularly for a teaching environment.
 
-The trend is towards deploying software using [Docker containers](https://www.docker.com/). Docker allows applications and their dependencies to run in virtual containers using Linux as the base OS. An excellent repository exists for Dockerized versions of R called [rocker](http://github.com/rocker-org/rocker). We use the rocker image `verse` which adds the `rstudio`, `tidyverse`, and `verse` layers to the `r-ver` image, which in our deployment is based on R 3.6.1.
+The trend is towards deploying software using [Docker containers](https://www.docker.com/). Docker allows applications and their dependencies to run in virtual containers using Linux as the base OS. An excellent repository exists for Dockerized versions of R called [rocker](http://github.com/rocker-org/rocker). We use the rocker image `verse` which adds the `rstudio`, `tidyverse`, and `verse` layers to the `r-ver` image, which in our deployment is based on R 3.6.3.
 
 We built `rspark` to extend `rocker` to the Spark ecosystem. The GitHub repo for `rspark` can be found [here](http://github.com/jharner/rspark). `rspark` consists of containers for RStudio, PostgreSQL, Hadoop, and Hive. Spark is installed in the RStudio container by default, but optionally Spark can be run on a master and two workers. The former approach has a smaller footprint and is often adequate for teaching.
