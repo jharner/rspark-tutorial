@@ -1,0 +1,24 @@
+---
+title: "Git Version Control"
+author: "Jim Harner"
+date: "9/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.4 Version Control with git
+
+We will use Git as a version control system (VCS). Git is a distributed version control system invented by Linus Torvalds for developing the Linux Kernel. Git allows you to track changes to files over time.
+
+Why should you use Git? Git allows you to:  
+
+* undue changes;  
+* look at the history of the files in a repository;  
+* check out a previous version;  
+* document changes made to the files;  
+* create branches for experimenting.
+
+We will use the RStudio's builtin `git`, but you should also install `git` on your local computer. `git` is already installed in the `rconnect` container. You will need to activate `git` if it is not already available. Go to `Global Options...` from the `Tools` menu, select Git/SVN from the side panel, and click "Enable version control interface for RStudio projects" and enter the Git executable as `/usr/bin/git` if these are not already specified. You do not need to specify a SSH RSA Key since we will not be using `ssh`.

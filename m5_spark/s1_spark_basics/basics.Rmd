@@ -26,7 +26,7 @@ sc <- spark_connect(master = master)
 [Spark](http://spark.apache.org/docs/latest/programming-guide.html#overview) is a general-purpose cluster computing system, which:
 
 * has high-level APIs in Java, Scala, Python and R;  
-* supports multi-step data pipelines based on directed acyclic graphs (DAGs);
+* supports multi-step data pipelines structured as directed acyclic graphs (DAGs);
 * supports in-memory data sharing across DAGs allowing different jobs to work with the same data.
 
 Spark provides a unified framework to manage big data processing with a variety of data sets that are diverse in nature, e.g., text data, graph data, etc., as well as the source of data (batch vs. real-time streaming data).
@@ -39,7 +39,7 @@ Spark supports a rich set of higher-level tools including:
 
 * *Structured Streaming* for real-time data processing. Spark streaming uses a fault-tolerant stream processing engine built on the Spark SQL engine. Thus, you can express your streaming computation the same way you would express a batch computation on static data. Using the DataFrame API, the Spark SQL engine will take care of running the analysis incrementally and it continuously update the final result as streaming data continues to arrive. 
 
-The [SparkR](https://spark.apache.org/docs/latest/sparkr.html) package is another R frontend to Spark, which is officially supported as part of the Spark distribution. However, we will focus on the [sparklyr](https://spark.rstudio.com) package since it ties into the larger tidyverse suite of packages.
+The [SparkR](https://spark.apache.org/docs/latest/sparkr.html) package is another R frontend to Spark, which is officially supported as part of the Spark distribution. However, we will focus on the [sparklyr](https://spark.rstudio.com) since it ties into the larger tidyverse suite of packages.
 
 ## 5.1 Sparklyr Basics
 
