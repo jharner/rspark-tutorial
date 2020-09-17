@@ -1,10 +1,10 @@
 ---
 title: "Databases"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/17/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 
@@ -13,11 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(RPostgreSQL)
 
-if(system("hostname", intern=TRUE) == "gbef4001.hpc.wvu.edu"){
-  host.name <- NULL
-  } else {
-    host.name <- "postgres"
-  }
+host.name <- "postgres" # for Docker deployment
+# host.name <- NULL     # for AWS deployment
 ```
 
 ## 2.5 Databases
@@ -67,12 +64,12 @@ measure_table ( date [PK] [FK date_table.ID],
 We connect to PostgreSQL through the R package `RPostgreSQL`.
 
 Ordinarily, we would use:
-```
+```{r}
 library(RPostgreSQL)
 
 tryCatch({
   drv <- dbDriver("PostgreSQL")
-  con <- dbConnect(drv, dbname='dataexpo')
+  con <- dbConnect(drv, host = host.name, dbname='dataexpo')
 
   dbListConnections(drv)
 
@@ -86,7 +83,7 @@ finally = {
   dbUnloadDriver(drv)
 })
 ```
-This provide safe coding in case there is a network problem. However, in order to get printed output in the `try` part, we will use regular R code.
+This provide safe coding in case there is a network problem. However, in order to get printed output beyond the last statement in the `tryCatch` function, we will use regular R code.
 
 ```{r}
 drv <- dbDriver("PostgreSQL")
@@ -228,7 +225,6 @@ Examples of NoSQL databases:
 * Graph: Neo4J, Infinite Graph  
 
 A vs. C is really only an issue if there is a network failure or communications issue. Some would argue that CAP is too simplistic.
-[Please stop calling databases CP or AP](https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html)
 
 Why choose NoSQL? To improve:  
 
