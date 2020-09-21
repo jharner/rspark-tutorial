@@ -1,10 +1,10 @@
 ---
 title: "RStudio Server"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/20/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -28,9 +28,9 @@ We run RStudio Server in a Docker container within a virtual computing environme
 * installing Vagrant/ VirtualBox on your own computer (https://github.com/jharner/rspark-vagrant);  
 * running Docker on an AWS instance.  
 
-The first option for `rspark` is for development purposes. It can be used, but it changes often. Instead, you should use `rspark-docker` (see Subsection 1.3.3) or `rspark-vagrant` (see Subsection 1.3.4). The AWS solution involves an Amazon account, which is inexpensive, but not free. It is more complex to set-up, but trivial to launch (see the ansible scripts in `rspark`).
+The first option for `rspark` is for development purposes. It can be used, but it changes often. Instead, you should use `rspark-docker` (see Subsection 1.3.3) or `rspark-vagrant` (see Subsection 1.3.4). The AWS solution involves an Amazon account, which is inexpensive, but not free. It is more complex to set-up, but easy to launch (see the ansible scripts in `rspark`).
 
-The Docker containers run on a stripped down version of Linux, in our case Debianl or Ubuntu. At this point `rspark` has the following containers: rstudio, postgres, hadoop, hive, spark, and two workers. I plan to add Hbase and perhaps other containers for other components of the Hadoop and Spark ecosystems. Ultimately, I would like to build a complete system for both static and streaming data.
+The Docker containers run Ubuntu Linux as a base. At this point `rspark` has the following containers: rstudio, postgres, hadoop, hive, spark, and three workers. I plan to add other containers for other components of the Hadoop and Spark ecosystems. Ultimately, I would like to build a complete system for both static and streaming data.
 
 Running RStudio Server on your local machine using Docker or Vagrant requires a terminal and some knowledge of Linux. The steps for doing this are described in Section 1.3 after Linux is introduced.
 
@@ -100,7 +100,7 @@ You can use R interactively from the `Console`, but most of your work will consi
 
 The notebook feature is very powerful (the most powerful I have seen) for interactively debugging code. It creates output for each chunk in a very informative way. LaTeX equations are displayed as typed.
 
-Other file types of interest in this class are: `R Script`, e.g., for Hadoop files, and `Text File` for data in a text format. The Shiny Web App is for producing reactive client/server web apps, typically with interactive plots.
+Other file types of interest in this class are: `R Script`, e.g., for Hadoop files, `Shell Script` for `bash` scripts, and `Text File` for data in a text format. The Shiny Web App is for producing reactive client/server web apps, typically with interactive plots.
 
 Files support built-in LaTeX for mathematics and code chunks containing not only R, but also Bash, Python, C++, SQL, etc. You can mix these code chunks within a single document.
 
@@ -108,9 +108,15 @@ R supports Projects which allow related files to be organized together. Projects
 
 #### The Console Panel
 
-The `Console` is for interactively executing R statements. Certain types of R statements generated from other sources also appear here. The `R Markdown` tab is transitory and appears when knitting takes place. R Markdown errors are also displayed in this tab.
+The `Console` is for interactively executing R statements. Certain types of R statements generated from other sources also appear here. The `R Markdown` and `Jobs` tabs are transitory and appears when knitting takes place. R Markdown errors are also displayed in the `R Markdown` tab.
 
-The `Terminal` tab provides access to a command line interface (CLI) to Linux using the `bash` shell. By default, you open a session in `Terminal 1`. Your working directory is displayed to the right of the terminal name, which can be changed. The prompt is given by `rstudio@CONTAINER_ID`. Additional terminals can be launched by selecting `Terminal` and then `New Terminal` in the `Tools` menu. Each terminal can be set to a specific directory for executing commands.
+The `Terminal` tab provides access to a command line interface (CLI) to Linux running in the RStudio container using the `bash` shell. By default, you open a session in `Terminal 1`. Your working directory is displayed to the right of the terminal name, which can be changed. The prompt is given by `rstudio@CONTAINER_ID`. Additional terminals can be launched by selecting `Terminal` and then `New Terminal` in the `Tools` menu. Each terminal can be set to a specific directory for executing commands.
+
+The RStudio Terminal does not allow us to `ssh` into the another running container directly. However, an external termainal app can be used assuming it is running in an environment with Docker installed. To `ssh` into another container using your favorite `term` app, use `docker exec`, e.g.,
+```
+docker exec -it postgres bash
+```
+to access the `postgres` container. Once inside of `postgres`, you can run `psql` to access databases, etc. Note: Section 5 of module 2 shows how to access databases using `psql` from within the `rstudio` container.
 
 #### Environments and Files
 
@@ -122,7 +128,7 @@ The `html` output is displayed in the `Viewer` and is also saved in the working 
 
 #### Packages
 
-R has a very robust package system currently consisting of over 13,000 official packages and many more being develop on GitHub that do almost everything of interest concerning nearly any type of data. For a complete listing see: [rdrr.io](https://rdrr.io). The `Package` tab gives you access to the currently installed packages. Loaded packages have a check beside them. Clicking on the package name brings up its documentation in the Help tab. Each function or data frame can be clicked to get detailed information about their usage.
+R has a very robust package system currently consisting of over 18,000 official packages and many more being developed on GitHub (> 64,000) that do almost everything of interest concerning nearly any type of data. For a complete listing see: [rdrr.io](https://rdrr.io). The `Package` tab gives you access to the currently installed packages. Loaded packages have a check beside them. Clicking on the package name brings up its documentation in the Help tab. Each function or data frame can be clicked to get detailed information about their usage.
 
 Clicking `Install` under `Packages` brings up a dialog for installing packages. It is also possible to `Update` currently installed packages.
 
