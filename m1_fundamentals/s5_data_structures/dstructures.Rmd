@@ -1,10 +1,10 @@
 ---
 title: "Data Structures"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/24/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,7 +25,9 @@ Other data structures can be constructed from these basic types. A `matrix`, or 
 Data structures in R are organized by:
 
 * Dimensionality  
-* Homogeneity
+* Homogeneity. 
+
+Atomic vectors and R objects made from vectors by specifying a `dim` attribute are homogeneous, i.e., their elements are of the same type (see below). Lists and data frames are heterogeneous, i.e., they can be composed of mixed types, as explained below.
 
 Dimension  | Homogeneous   | Heterogeneous  
 ---------- | ------------- | -------------  
@@ -57,7 +59,7 @@ If you execute each chunk individually (by clicking on the right error above), y
 
 From a theoretical perspective `velocity` can be modeled by the Michaelis-Menten function:  
 $$ y = \frac{\beta_0 x}{\beta_1 + x} + \epsilon $$.  
-where $x$ is the concentration (`conc`) and $y$ is the velocity of the enzymatic reaction (`velocity`). This can be fit by a nonlinear regression using the `nls` function.
+where $x$ is the concentration (`conc`) and $y$ is the velocity of the enzymatic reaction (`velocity`). This can be fit by a nonlinear regression using the `nls` function. Notice that the R expression, `velocity ~ (beta0 * conc) / (beta1 + conc)`, mimics the mathematical expression above, but without the addive error term given by $\epsilon$, which is assumed by default.
 ```{r}
 puromycin.nls <- nls(velocity ~ (beta0 * conc) / (beta1 + conc),
                      start=c(beta0=200, beta1=0.1))

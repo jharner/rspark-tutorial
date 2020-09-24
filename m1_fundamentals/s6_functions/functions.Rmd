@@ -1,10 +1,10 @@
 ---
 title: "Functions"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/24/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -150,14 +150,20 @@ newton_search(f = sin, df = Dsin, guess = 3)
 newton_search(f = sin, df = Dsin, guess = 3, conv = 0.000001)
 ```
 
+### 1.5.5 Finding the Maximum Likelihood Estimator of a Parameter
+
 The log-likelihood of the gamma distribution with scale parameter 1 can be written as:
 $$ (\alpha -1)s -n\log\Gamma(\alpha) $$
 where $\alpha$ is the shape parameter and $s = \sum \log X_i$ is the sufficient statistic.
 
-Randomly draw a sample of $n = 30$ with a shape parameter of $\alpha = 4.5$. Using `newton_search` and `make_derivative`, find the maximum likelihood estimate of $\alpha$. Use the moment estimator of $\alpha$, i.e., $\bar X$ as the initial guess. The log-likelihood function in R is:
+Randomly draw a sample of $n = 30$ with a shape parameter of $\alpha = 4.5$. Using `newton_search` and `make_derivative`, find the maximum likelihood estimate of $\alpha$.
+
+We use the function `rgamma` to draw a random sample from the canonical gamma distribution with shape parameter $\alpha = 3.5$.
 ```{r}
 x <- rgamma(n=30, shape=4.5)
-
+```
+We use the moment estimator of $\alpha$, i.e., $\bar X$ as the initial guess. The log-likelihood function is an R functional.
+```{r}
 gllik <- function() {
   s <- sum(log(x))
   n <- length(x)
@@ -166,6 +172,8 @@ gllik <- function() {
   }
 }
 ```
+Notice that the functional `gllik` encapsulates `s` and `n` as data.
+
 You must apply `newton_search` to the first and second derivatives (derived numerically using `make_derivative`) of the log-likelihood. The answer should be near 4.5.
 ```{r}
 # The first and second derivatives of the likelihood:

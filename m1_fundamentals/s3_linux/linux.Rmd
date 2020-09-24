@@ -193,9 +193,11 @@ Since you local repo has been changed, you will need to specify the `build` opti
 You can enter containers from the local command line using `ssh` (secure shell). For example, to `ssh` into the `rstudio` container, run the following in your local (host) terminal:
 ```
 docker exec -ti rstudio bash
-cd home/rstudio
+cd /home/rstudio
 ```
-where "rstudio" is the container `NAME`, the `-ti` option requests an interactive terminal,  and `bash` is the process we wish to run. You can `ssh` into any container by specifying its name, which can be found by issuing the following Docker command in the terminal of your host machine.
+where "rstudio" is the container `NAME`, the `-ti` option requests an interactive terminal,  and `bash` is the process we wish to run. You will be logged in as `root`, which means that your home directory is `/root`.
+
+You can `ssh` into any container by specifying its name, which can be found by issuing the following Docker command in the terminal of your host machine.
 ```
 docker ps
 ```
