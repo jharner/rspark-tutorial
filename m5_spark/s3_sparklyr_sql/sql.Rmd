@@ -1,10 +1,10 @@
 ---
 title: "Spark DataFrame SQL"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "9/28/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -36,7 +36,7 @@ airlines_sdf <- copy_to(sc, airlines, "airlines", overwrite = TRUE)
 
 ### 5.3.1 Joining Spark Data Tables
 
-In Section 5.2.1 the `dplyr` verbs were used to manipulate a Spark DataFrame. However, we often have multiple related Spark tables which we need to combine prior to performing data manipulations.
+In Section 5.2.1 the `dplyr` verbs were used to manipulate a Spark DataFrame. However, we often have multiple related Spark SQL tables which we need to combine prior to performing data manipulations.
 
 A workflow was developed in Section 5.2.1 to find the flights with a departure delay greater than 1000 minutes. However, we did not have the carrier names since they were in a different table. Providing this information can be done with a `left_join`.
 ```{r}
@@ -106,7 +106,7 @@ spark_read_parquet(sc, "airlines2_sdf",
                    "hdfs://hadoop:9000/user/rstudio/airlines_parquet")
 ```
 
-Use the `spark_write_csv` and `spark_write_json` functions to write data as csv or json files, respectively. 
+Note that `airlines2_sdf` is a Spark DataFrame. Use the `spark_write_csv` and `spark_write_json` functions among others to write data to HDFS as `csv` or `json` files, respectively. 
 
 ```{r}
 spark_disconnect(sc)
