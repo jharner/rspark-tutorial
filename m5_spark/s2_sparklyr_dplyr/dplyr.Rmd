@@ -3,8 +3,8 @@ title: "Spark dplyr"
 author: "Jim Harner"
 date: "9/30/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +42,7 @@ Perhaps the most powerful feature of `dplyr` is its support for building data-sc
 
 ### 5.2.1 `dplyr` Verbs
 
-`dplyr` verbs manipulate structured data in the form of tables. When the tables are Spark DataFrames, `dplyr` translates the commands to Spark SQL statements. The `dplyr`'s five verbs and their SQL equivalents are:  
+`dplyr` verbs manipulate structured data in the form of tables. When the tables are Spark DataFrames, `dplyr` translates the commands to Spark SQL statements. The `dplyr`'s five principal verbs and their SQL equivalents are:  
 
 * `select` (SELECT);  
 * `filter` (WHERE);  
@@ -50,7 +50,7 @@ Perhaps the most powerful feature of `dplyr` is its support for building data-sc
 * `summarise` (aggregators such as sum, min, etc.);  
 * `mutate` (operators such as +, *, log, etc.).
 
-We use the `flights` data from the `nycflights13` packages to illustrate some of the `dplyr` verbs. First, we copy the `flights` and the airlines data frames to Spark.
+We use the `flights` data from the `nycflights13` packages to illustrate some of the `dplyr` verbs. For descriptions of the variables, select the `nycflights13` package and then click on the data sets of interest. First, we copy the `flights` and the airlines data frames to Spark.
 ```{r}
 library(nycflights13)
 flights_sdf <- copy_to(sc, flights, "flights_sdf", overwrite = TRUE)
@@ -123,7 +123,7 @@ Next we group-by carrier and summarise the results.
 ```{r}
 carrier_dep_delay_sdf %>%
   group_by(carrier) %>%
-  summarise(count =n(), mean_dep_delay = mean(dep_delay))
+  summarise(count = n(), mean_dep_delay = mean(dep_delay))
 ```
 
 The `group_by` function seems innocent enough, but it may not be so. It has some of the same problems as Hadoop. Hadoop is terrible for complex workflows since data is constantly read from and written to HDFS and each cycle of MapReduce involves the dreaded shuffle. 
