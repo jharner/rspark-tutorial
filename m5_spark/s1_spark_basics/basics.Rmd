@@ -32,7 +32,7 @@ Spark's home is located in `/opt/spark` on Unbuntu 18.04.
 * supports multi-step data pipelines structured as directed acyclic graphs (DAGs);
 * supports in-memory data sharing across DAGs allowing different jobs to work with the same data.
 
-We cab use `bash` to determine the Spark version:
+We can use `bash` to determine the Spark version:
 ```{bash}
 # echo $SPARK_HOME
 # The following command displays the Spark version installed:
