@@ -1,7 +1,7 @@
 ---
 title: "Spark DataFrame SQL"
 author: "Jim Harner"
-date: "9/28/2020"
+date: "9/30/2020"
 output:
   html_document: default
   pdf_document: default
@@ -16,11 +16,18 @@ Load `sparklyr` and establish the Spark connection.
 library(dplyr, warn.conflicts = FALSE)
 library(sparklyr)
 
-# start the sparklyr session
+# start the spark session
 master <- "local"
 # master <- "spark://master:7077"
 sc <- spark_connect(master, spark_home = Sys.getenv("SPARK_HOME"),
                     method = c("shell"), app_name = "sparklyr")
+Sys.getenv("SPARK_HOME")
+```
+Use bash to determine the Spark version:
+```{bash}
+# echo $SPARK_HOME
+# The following command displays the Spark version installed:
+spark-submit --version
 ```
 
 ## 5.3 Spark DataFrame SQL
@@ -85,9 +92,9 @@ sample_frac(flights_sdf, 0.01)
 ```
 Sampling is often done during the development and testing cycle to limit the size of the data.
 
-### 5.3.4 Writing Data
+### 5.3.4 Writing Data to HDFS
 
-We can save the results of our analysis or the tables that you have generated in Spark into persistent storage. Parquet is a commonly used persistent store for various data processing systems in the Hadoop ecosystem. It has a columnar storage format which Spark SQL supports for both reading and writing, including the schema of the original data.
+We can save the results of our analysis or the tables that you have generated in Spark into HDFS persistent storage. Parquet is a commonly used persistent store for various data processing systems in the Hadoop ecosystem. It has a columnar storage format which Spark SQL supports for both reading and writing, including the schema of the original data.
 
 As an example, we can write the `airlines_sdf` Spark DataFrame out to a Parquet file using the `spark_write_parquet` function.
 ```{r}
@@ -107,6 +114,20 @@ spark_read_parquet(sc, "airlines2_sdf",
 ```
 
 Note that `airlines2_sdf` is a Spark DataFrame. Use the `spark_write_csv` and `spark_write_json` functions among others to write data to HDFS as `csv` or `json` files, respectively. 
+
+### 5.3.5 Hive Functions
+
+Many of Hive’s built-in functions (UDF) and built-in aggregate functions (UDAF) can be called by `dplyr`’s `mutate` and `summarize` funcitons.
+
+`datediff` and `current_date` are Hive UDFs to figure the difference between the `flight_date` and the current system date:
+```{r}
+flights_sdf %>% 
+  mutate(flight_date = paste(year, month, day, sep="-"),
+         days_since = datediff(current_date(), flight_date)) %>%
+  group_by(flight_date, days_since) %>%
+  tally() %>%
+  arrange(days_since)
+```
 
 ```{r}
 spark_disconnect(sc)
