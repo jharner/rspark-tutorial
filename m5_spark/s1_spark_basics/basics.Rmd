@@ -36,7 +36,7 @@ We cab use `bash` to determine the Spark version:
 ```{bash}
 # echo $SPARK_HOME
 # The following command displays the Spark version installed:
-spark-submit --version 
+spark-submit --version 2>&1 | grep -v "SLF4J:"
 ```
 
 Spark provides a unified framework to manage big data processing with a variety of data sets that are diverse in nature, e.g., text data, graph data, etc., as well as the source of data (batch vs. real-time streaming data).
