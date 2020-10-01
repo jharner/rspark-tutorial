@@ -1,7 +1,7 @@
 ---
 title: "Spark Basics"
 author: "Jim Harner"
-date: "9/16/2020"
+date: "9/30/2020"
 output:
   html_document: default
   pdf_document: default
@@ -21,13 +21,23 @@ master <- "local"
 # master <- "spark://master:7077"
 # master <- "yarn"
 sc <- spark_connect(master = master)
+# Location of SPARK_HOME using an R funtions
+Sys.getenv("SPARK_HOME")
 ```
+Spark's home is located in `/opt/spark` on Unbuntu 18.04.
 
 [Spark](http://spark.apache.org/docs/latest/programming-guide.html#overview) is a general-purpose cluster computing system, which:
 
 * has high-level APIs in Java, Scala, Python and R;  
 * supports multi-step data pipelines structured as directed acyclic graphs (DAGs);
 * supports in-memory data sharing across DAGs allowing different jobs to work with the same data.
+
+We cab use `bash` to determine the Spark version:
+```{bash}
+# echo $SPARK_HOME
+# The following command displays the Spark version installed:
+spark-submit --version
+```
 
 Spark provides a unified framework to manage big data processing with a variety of data sets that are diverse in nature, e.g., text data, graph data, etc., as well as the source of data (batch vs. real-time streaming data).
 
@@ -52,7 +62,7 @@ The `sparklyr` R package provides a `dplyr` backend to Spark. Using `sparklyr`, 
 * write R code to access Spark's machine learning library, [MLlib](http://spark.apache.org/docs/latest/mllib-guide.html);  
 * create Spark extensions.  
 
-Using `sparklyr`, connections can be made to local instances or to remote Spark clusters. In our default case the connection is to a local connection bundled in the `rstudio` container. 
+Using `sparklyr`, connections can be made to local instances or to remote Spark clusters. In our default case the connection is to a local connection bundled in the `rstudio` container. Optionally, a master and 3 worker nodes are available in `rspark`.
 
 The `sparklyr` library is loaded in the setup above and a Spark connection is established. The Spark connection `sc` provides the connector to Spark.
 
@@ -61,6 +71,7 @@ The `sparklyr` library is loaded in the setup above and a Spark connection is es
 The `dpyr` verbs, e.g., `mutate`, `filter`, can be used on Spark DataFrames. A more complete discussion is given in Section 5.2.
 
 We will use the `flights` data in the `nycflights13` package as an example. If its size becomes an issue, execute each chunk in sequence in notebook mode.
+
 ```{r}
 library(nycflights13)
 str(flights)

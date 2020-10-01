@@ -21,13 +21,6 @@ master <- "local"
 # master <- "spark://master:7077"
 sc <- spark_connect(master, spark_home = Sys.getenv("SPARK_HOME"),
                     method = c("shell"), app_name = "sparklyr")
-Sys.getenv("SPARK_HOME")
-```
-Use bash to determine the Spark version:
-```{bash}
-# echo $SPARK_HOME
-# The following command displays the Spark version installed:
-spark-submit --version
 ```
 
 ## 5.3 Spark DataFrame SQL

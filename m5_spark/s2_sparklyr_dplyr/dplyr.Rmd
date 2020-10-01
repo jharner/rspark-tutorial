@@ -42,7 +42,7 @@ Perhaps the most powerful feature of `dplyr` is its support for building data-sc
 
 ### 5.2.1 `dplyr` Verbs
 
-`dplyr` verbs manipulate structured data in the form of tables. When the tables are Spark DataFrames, `dplyr` translates the commands to Spark SQL statements. The `dplyr`'s five principal verbs and their SQL equivalents are:  
+`dplyr` verbs manipulate structured data in the form of tables. When the tables are Spark DataFrames, `dplyr` translates the commands to Spark SQL statements. The `dplyr`'s principal verbs and their SQL equivalents are:  
 
 * `select` (SELECT);  
 * `filter` (WHERE);  
