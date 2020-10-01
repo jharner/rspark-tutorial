@@ -1,7 +1,7 @@
 ---
 title: "Spark Basics"
 author: "Jim Harner"
-date: "9/30/2020"
+date: "10/1/2020"
 output:
   html_document: default
   pdf_document: default
@@ -36,7 +36,7 @@ We cab use `bash` to determine the Spark version:
 ```{bash}
 # echo $SPARK_HOME
 # The following command displays the Spark version installed:
-spark-submit --version
+spark-submit --version 
 ```
 
 Spark provides a unified framework to manage big data processing with a variety of data sets that are diverse in nature, e.g., text data, graph data, etc., as well as the source of data (batch vs. real-time streaming data).

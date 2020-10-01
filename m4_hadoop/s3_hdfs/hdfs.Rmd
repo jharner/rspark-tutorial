@@ -1,17 +1,15 @@
 ---
 title: "HDFS"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "10/1/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 user <- "rstudio"
-
-Sys.setenv(PATH="/opt/hive/bin:/opt/hadoop/bin/:/usr/lib/rstudio-server/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
 ```
 
 ## 4.3 HDFS
@@ -55,19 +53,17 @@ As a user you must interact with both the *local filesystem* and *hdfs*. Locally
 You can experiment in the shell with the following scripts to show the `hdfs` commands. (Note: the `hdfs` commands executed in the section are run for illustrative purposes, i.e., they are run in the `rstudio` container---not the `hadoop` container.)
 ```{bash}
 # show the hdfs commands
-hdfs
+hdfs | head
 ```
 The `hdfs` command of interest is `dfs` which runs a filesystem command on the distributed file systems supported in Hadoop.
 
 `hdfs dfs` shows the `dfs` commands and their options. Alternately, you can use `hadoop fs` to issue commands.
 ```{bash}
 # show the options for the dfs command
-hdfs dfs 
+hdfs dfs | head
 # hadoop fs
 # echo $? show the exit code in the last command, which should be 0
 echo $?
-# if the exit code is not 0, you can use:
-echo ""  # or $?
 ```
 Note that the format of the commands involving the distributed file system is `hdfs dfs <options>`.
 
