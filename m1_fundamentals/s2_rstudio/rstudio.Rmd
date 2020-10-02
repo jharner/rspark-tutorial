@@ -1,7 +1,7 @@
 ---
 title: "RStudio Server"
 author: "Jim Harner"
-date: "9/20/2020"
+date: "10/2/2020"
 output:
   html_document: default
   pdf_document: default
@@ -131,6 +131,8 @@ The `html` output is displayed in the `Viewer` and is also saved in the working 
 R has a very robust package system currently consisting of over 18,000 official packages and many more being developed on GitHub (> 64,000) that do almost everything of interest concerning nearly any type of data. For a complete listing see: [rdrr.io](https://rdrr.io). The `Package` tab gives you access to the currently installed packages. Loaded packages have a check beside them. Clicking on the package name brings up its documentation in the Help tab. Each function or data frame can be clicked to get detailed information about their usage.
 
 Clicking `Install` under `Packages` brings up a dialog for installing packages. It is also possible to `Update` currently installed packages.
+
+A comprehensive guide to R packages on CRAN, R-Forge, and GitHub can be found [here](https://rdrr.io).
 
 
 
