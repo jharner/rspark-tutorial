@@ -1,7 +1,7 @@
 ---
 title: "Linux"
 author: "Jim Harner"
-date: "9/20/2020"
+date: "10/2/2020"
 output:
   html_document: default
   pdf_document: default
@@ -25,22 +25,27 @@ Linux has a number of components, including:
 * daemons for running background processes;  
 * a shell for issuing commands (the bash shell in our case).  
 
-You have access to the `bash` shell in RStudio by selecting the `Shell...` menu item from the `Tools` menu or simply by clicking in the `Terminal` tab in the `Console Pane`.
+You have access to the `bash` shell in RStudio by selecting the `Shell...` menu item from the `Tools` menu or simply by clicking in the `Terminal` tab in the `Console Pane`. The `bash` shell is found in `/bin/bash`.
+```{bash}
+which bash
+```
 
 The Linux kernel executes command line tools consisting of several types. 
 
 * binary executables (compiled source code), e.g., `psql` for running PostgreSQL interactively or `R` for running R;     
 * shell builtins, e.g., `cd` for changing directories and `exit` for exiting the shell;  
-* interpreted scripts, e.g., `Rscript` for running interpreted R;   
+* interpreted scripts, e.g., `Rscript` for running R scripts;   
 * shell functions, i.e., functions that are executed by the bash shell.  
 
-Commands are typed into a shell. In our case we will be using the `bash` shell, or "born again shell." The original UNIX shell was called `sh` and hence the name for the improved shell we now use.
+Commands are typed into a shell. In our case we will be using the `bash` shell, or "born again shell." The original UNIX shell was called `sh` and hence the name for the improved shell we now use. We will use the binary executable `psql` in module 2, i.e, M2_DataExtraction. R scripts associated with Hadoop are run in Module 4.
 
 ### 1.3.2 Files and Directories
 
 We now illustrate various shell builtin commands. 
 
 Select `Shell...` from the `Tools` menu or click on `Terminal` in the `Console` panel. To get oriented, type the following into the shell. Or you can run this chunk by clicking on the right-pointing arrow (after executing the preceding chunks with the downward point arrows).
+
+`pwd` prints the working directory, which by default is the directory containing the file we opened, i.e., `linux.Rmd`. `echo` sends what follows in quotes to standard output. The `-e` option in the `echo` command allows backslash escapes, which in this case create a new line specified by `\n`. For reference: `\b` creates backspaces; `\c` suppresses the trailing new line; `\t` creates horizontal tabs, etc. We now change directory (`cd`) to the home (login) directory using the `HOME` environmental variable, whose value is extracted by `$`. The home directory is also denoted by `~`.
 ```{bash}
 pwd
 echo -e "\nchange to your home directory and print the home directory path"
@@ -49,15 +54,23 @@ pwd
 echo -e "\nthe list of the files and subdirectories in your login ($HOME) directory"
 ls
 ```
-`pwd` prints the working directory, which by default is the directory containing the file we opened, i.e., `linux.Rmd`. `echo` sends what follows in quotes to standard output. The `-e` option allows backslash escapes, which in this case create a new line specified by `\n`. For reference: `\b` backspaces; `\c` suppresses the trailing new line; `\t` creates horizontal tabs, etc.
+You are now be in the directory `/users/<username>`, where `username` is your login name. The directory contents is given by `ls`, which lists the files and sub-directories in your home directory.
 
-We then change working directory with `cd` to your home (login) directory using the `HOME` environmental variable, also denoted by `~`, or simply use `cd`. You should now be in the directory `/home/rstudio`, where `rstudio` is your login name. The directory contents is given by `ls`, which lists the files and sub-directories in your home directory.
-
-Once you go to another bash or R code chunk, you are back in the directory containing the file you are editing, i.e., `linux.Rmd` here. Let's get more detail on the files and directories in your working directory. This can be done using the `-al` options with `ls`, or `ls -a -l` if you prefer. Also, let's list the files in your home directory without changing directories (your output will differ from my login directory).
+However, once you go to another bash or R code chunk, you are back in the directory containing the file you are editing, i.e., `linux.Rmd` here..
 ```{bash}
-ls -al
+pwd
+echo -e "\nthe files in the directory containing the file we opened, i.e., linux.Rmd"
+ls
+```
 
-echo -e "\nlist the files in your home directory from your working directory"
+Let's get more detail on the files and directories in your working directory. This can be done using the `l` or`-al` options with `ls`, or `ls -a -l` if you prefer. 
+```{bash}
+echo -e "\nlist the files in your working directory using long format"
+ls -l
+```
+Also, let's list the files in your home directory without changing directories (your output will differ from my login directory).
+```{bash}   
+echo -e "\nlist the files in your home directory from your working directory using the long format and showing the hidden files"
 ls -al $HOME
 ```
 The option `-a` causes `ls` to list all files and directories, including those that are normally hidden, whereas `-l` invokes the long format (`l`), which gives the permissions and other information about the owner, group, size, modification date, time, etc. The file and directory names are given in the last column of the output. 
@@ -92,7 +105,7 @@ To remove a file, use `rm` followed by the file name. To remove a directory cont
 
 Linux has a large number of built-in commands, which you should gradually learn. Extensive information is given by the `man` or manual pages for each command. For example:
 ```
-man chmod
+man chmod | head -n 15
 ```
 Most commands have many options, but usually you can get by with only a few. Often the output from `man` is overwhelming and difficult to read. Since `man` is not part of our Ubuntu Linux distribution used here due to its size, consider googling the command.
 
