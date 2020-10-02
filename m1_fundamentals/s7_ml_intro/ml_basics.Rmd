@@ -34,7 +34,10 @@ Put another way, supervised learning is concerned with problems that have a meas
 * *Statistical modeling* is done (primarily) to infer the underlying generative process.  
 * *Machine learning (ML) algorithms* are used to predict or classify with the most accuracy.
 
-ML algorithms form the basis of data products.    
+ML algorithms form the basis of data products.
+
+Machine learning algorithms are expansive in their depth and breath as seen below.
+![Machine Learning Algorithms](MachineLearningAlgorithms.png)
 
 The culture wars:
 
