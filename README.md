@@ -1,6 +1,5 @@
 ### rspark-tutorial
 
-
 `rspark-tutorial` provides content illustrating the use of `rspark`, a Docker-based computing environment. `rspark` runs R, RStudio, PostgreSQL, Hadoop, Hive, and Spark in containers on your local computer (or optionally on AWS). The content covers a range of topics including many aspects of the `tidyverse`, machine learning using Spark, etc.
 
 This tutorial is meant to run in conjunction with `rspark-docker`, which contains images of the `rspark` components. The steps for installing and launching the `rspark-docker` containers is given here:  
