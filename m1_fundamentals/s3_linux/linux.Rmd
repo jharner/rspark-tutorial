@@ -3,8 +3,8 @@ title: "Linux"
 author: "Jim Harner"
 date: "10/2/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -79,7 +79,9 @@ Lines beginning with a `d` indicate a directory, whereas those beginning with a 
 
 We often use `.`, current directory, to execute interpreted scripts, e.g., `./start.sh` to launch the Docker containers for `rspark` from Docker Hub (see Section 1.3.3 below). Here `start.sh` is the name of the bash script with the extension `.sh`. An R script has `.R` as the extension.
 
-The permission string is given by the first 10 characters in each output line from `ls -al`. After the first character, we have permissions (file/directory modes) in three sequences of three characters each. For example, for `rspark-tutorial`: 
+The permission string is given by the first 10 characters in each output line from `ls -al`. After the first character, we have permissions (file/directory modes) in three sequences of three characters each.
+
+For example, for `rspark-tutorial`: 
 
 * The first `rwx` indicates you (the owner, i.e., `rstudio`) have read, write, and execute permissions;  
 * The second `r-x` indicate your group, `rstudio` here, has read and execute permissions, but not write permissions.  
@@ -119,7 +121,11 @@ Each container has an associated `Dockerfile`, which is a script for building th
 
 The Mac is a BSD UNIX-based system and therefore has many of the tools required for data science. Other tools are easy to install. For the most part, data science runs on open-source Linux-based environments, which are compatible with macOS. Your principal interface to the UNIX side of the Mac is the Terminal.app found in the Utilities directory (folder) in the Applications directory (folder). You should drag this App to your Dock for easy access. You can also run the X11 windowing system, but it is not necessary since we will be working from the command line.
 
-The Docker solutions work on a Mac with macOS 10.13 (High Sierra) or later. Go here to get [Docker Desktop for the Mac:](https://www.docker.com/docker-mac) and follow the directions for installation. Docker Desktop provides a graphical interface for managing Docker containers.
+macOS comes preinstalled with git, but it should be updated. You can determine the version of git by typing git version at the command prompt. If git is not present or if the version is earlier than 2.17.1, you need to install or update git.
+
+Go to: [git for Mac](https://git-scm.com/downloads) and download/install the latest release. You probably will get a message that the package cannot be opened because it is from an unidentified developer. If you see this, then open up System Preferences > Security & Privacy > General, and click 'Open Anyway' for this pkg in the lower right.
+
+The Docker solutions work on a Mac with macOS 10.13 (High Sierra) or later. Go here to get [Docker Desktop for the Mac:](https://www.docker.com/docker-mac) and follow the directions for installation. You will need to create an account on Docker to download the disk image (.dmg file) and you may get a verification email. After dragging Docker to your Applications folder, run it. You may see '"Docker..." can't be opened...', so again click 'Open Anyway' in Security & Privacy preferences. Docker Desktop provides a graphical interface for managing Docker containers.
 
 #### Installing Docker for Windows
 
@@ -129,11 +135,11 @@ For bash access install [git for Windows](https://git-for-windows.github.io). Th
 
 Docker requires a hypervisor (Hyper-V in the case of Windows) to run and it is not installed by default on Windows 10. Hyper-V can be installed on Windows 10 Enterprise, Professional, and Education, but not on Windows 10 Home, Mobile, and earlier versions of Windows. If you meet the system requirements, follow the instruction for installing [Hyper-V here](https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v).  
 
-Once Hyper-V is installed, get [Docker for the Windows](https://www.docker.com/docker-windows) and follow the directions for installation.  
-
-The following installations assume you have a `bash` shell available. Ideally, you should be on a high-speed network. 
+Once Hyper-V is installed, get [Docker for the Windows](https://www.docker.com/docker-windows) and follow the directions for installation. 
 
 Note: Windows Subsystem for Linux v2 (WSL 2) is now available for Windows 10 Professional and it supports Docker containers. Directions will be fothcoming.
+
+The following installations assume you have a `bash` shell available. Ideally, you should be on a high-speed network. 
 
 #### Running `rspark` from Docker Hub
 
@@ -154,7 +160,7 @@ You are now ready to start your session. Assuming you are in the parent director
 cd rspark-docker
 ./start.sh
 ```
-The last command runs the `start.sh` shell script, pulls the pre-built tagged images from Docker Hub (currently 0.9.9), and launches the containers. You must have execute privileges to run the shell script. If not, use `chmod`, e.g., `chmod 755 start.sh`.
+The last command runs the `start.sh` shell script, pulls the pre-built tagged images from Docker Hub (currently 1.0.3), and launches the containers. You must have execute privileges to run the shell script. If not, use `chmod`, e.g., `chmod 755 start.sh`.
 
 It will take awhile the first time or after a pull from GitHub. Eventually, you will return to the line prompt.
 
@@ -169,7 +175,7 @@ To start the containers again if the containers have been terminated, assuming y
 ```
 ./start.sh
 ```
-if you are in the `rspark-docker` directory. Then login to RStudio as before.
+Then login to RStudio as before.
 
 #### Running `rspark` from GitHub
 
@@ -201,7 +207,13 @@ git pull origin master
 ```
 Since you local repo has been changed, you will need to specify the `build` option the first time you execute `start.sh`.
 
-#### Running Docker commands from the command line
+### 1.3.4 Running Docker Commands from the Command Line
+
+You can `ssh` into any container by specifying its name, which can be found by issuing the following Docker command in the terminal of your host machine.
+```
+docker ps
+```
+The output gives details concerning the currently running containers. To see all running and stopped containers specify the `-a` option.
 
 You can enter containers from the local command line using `ssh` (secure shell). For example, to `ssh` into the `rstudio` container, run the following in your local (host) terminal:
 ```
@@ -210,15 +222,11 @@ cd /home/rstudio
 ```
 where "rstudio" is the container `NAME`, the `-ti` option requests an interactive terminal,  and `bash` is the process we wish to run. You will be logged in as `root`, which means that your home directory is `/root`.
 
-You can `ssh` into any container by specifying its name, which can be found by issuing the following Docker command in the terminal of your host machine.
-```
-docker ps
-```
-The output gives details concerning the currently running containers. To see all running and stopped containers specify the `-a` option.
-
 At this point you are in the `bash` shell within the `rstudio` container. You can now run a command-line version of R by simply typing `R`, a binary executable, at the `#` or `$` prompt. This will give you an R console in your terminal with `>` as its prompt. However, `ssh`ing into a container is generally done for debugging in creating the container's Dockerfile---not for running application programs.
 
 Note that the `Terminal` tab within RStudio's `Console` panel is running bash within the `rstudio` container. The terminal prompt is `rstudio@<CONTAINER ID>:<PATH to working directory>`. Ironically, you can run a separate R process within the Terminal.
+
+#### Container Management
 
 You can get a list of running containers by typing `docker ps` into your local terminal or `docker ps -a` to list both the running and stopped containers. The bash script `dockill.sh` in the `rspark` GitHub repo has a series of `docker` commands to control your images, containers, and volumes. For example, to stop running containers, issue:
 ```
@@ -234,7 +242,7 @@ docker rmi -f $(docker images -q)
 ```
 If you are having problems with your containers, you can stop and then delete the containers and images (in this order). Once you delete the containers, images, and perhaps the volumes, then you must download new images from Docker Hub or rebuild the images from GitHub. 
 
-### 1.3.4 Vagrant/ VirtualBox Virtualization
+### 1.3.5 Vagrant/ VirtualBox Virtualization
 
 If you cannot install `rspark` using Docker, then try Vagrant/ VirtualBox. Vagrant is heavier than Docker and the download is longer, but it works well. For a more complete description of the installation process see the `README` file from the `rspark-vagrant` repo: [https://github.com/jharner/rspark-vagrant](https://github.com/jharner/rspark-vagrant)
 
@@ -258,12 +266,14 @@ You are now ready to start your session.
 cd rspark-vagrant
 ./start.sh
 ```
-The last command runs the `start.sh` shell script. It will take awhile the first time or after a pull. Now open a browser and type the url as: `localhost:8787` and sign into RStudio:  
+The last command runs the start shell script. It will take awhile the first time or after a pull. Eventually, you will reach a line somewhat like: "hive_1      | SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]". Leave the terminal running. 
+
+Now open a browser and type the url as: `localhost:8787` and theb sign into RStudio:  
 
 Username: rstudio  
 Password: rstudiojh
 
-Leave the terminal running. When finished, quit the current R session (red button). Then return to the terminal and type: Control-C, which will return the prompt.
+When finished, quit the current R session (red button). Then return to the terminal and type: Control-C, which will stop VirtualBox `rspark` and return the prompt.
 
 To start the session again, assuming you are in your home directory, execute the following commands:  
 ```
