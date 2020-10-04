@@ -1,7 +1,7 @@
 ---
 title: "HDFS"
 author: "Jim Harner"
-date: "10/1/2020"
+date: "10/4/2020"
 output:
   html_document: default
   pdf_document: default
@@ -60,7 +60,7 @@ The `hdfs` command of interest is `dfs` which runs a filesystem command on the d
 `hdfs dfs` shows the `dfs` commands and their options. Alternately, you can use `hadoop fs` to issue commands.
 ```{bash}
 # show the options for the dfs command
-hdfs dfs | head
+hdfs dfs
 # hadoop fs
 # echo $? show the exit code in the last command, which should be 0
 echo $?

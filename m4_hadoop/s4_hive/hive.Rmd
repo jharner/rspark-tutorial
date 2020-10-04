@@ -1,10 +1,10 @@
 ---
 title: "Data Storage (Hive and HBase)"
 author: "Jim Harner"
-date: "5/30/2020"
+date: "10/4/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,7 +30,7 @@ HiveServer1 used Hive CLI (command line interface) to send SQL commands to Hive 
 
 The CLI used in HiveServer2 is `beeline`. Beeline is a JDBC client based on the [SQLLine CLI](http://sqlline.sourceforge.net), which communicates with the HiveServer using Thrift APIs. The connection to HiveServer2 is a JDBC URL. The following code can be executed line-by-line in RStudio's Shell.
 ```
-/opt/hive/bin/beeline -u jdbc:hive2://hive:10000
+/opt/hive/bin/beeline -u jdbc:hive2://hive:10000 
 or
 # /opt/hive/bin/beeline
 # !connect jdbc:hive2://hive:10000
@@ -46,11 +46,11 @@ jdbc:hive2://hive:10000> !quit;
 
 We can execute an external file with the `-f` option, which in this case creates the `test1` database.
 ```{bash}
-/opt/hive/bin/beeline -u jdbc:hive2://hive:10000 -f "hive-test.sql"
+/opt/hive/bin/beeline -u jdbc:hive2://hive:10000 -f "hive-test.sql" 2>&1 | grep -v "SLF4J:"
 ```
 We use the `-e` option to specify a query string. Multiple queries are separated by `;`.
 ```{bash}
-/opt/hive/bin/beeline -u jdbc:hive2://hive:10000 -e "show tables; select * from test1 LIMIT 10;"
+/opt/hive/bin/beeline -u jdbc:hive2://hive:10000 -e "show tables; select * from test1 LIMIT 10;" 2>&1 | grep -v "SLF4J:"
 ```
 Notice that the output is messy and surrounds the desired results.
 
