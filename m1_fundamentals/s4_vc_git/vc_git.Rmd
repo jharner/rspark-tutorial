@@ -1,8 +1,10 @@
 ---
 title: "Git Version Control"
 author: "Jim Harner"
-date: "9/17/2020"
-output: html_document
+date: "10/3/2020"
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -21,4 +23,4 @@ Why should you use Git? Git allows you to:
 * document changes made to the files;  
 * create branches for experimenting.
 
-We will use the RStudio's builtin `git`, but you should also install `git` on your local computer. `git` is already installed in the `rconnect` container. You will need to activate `git` if it is not already available. Go to `Global Options...` from the `Tools` menu, select Git/SVN from the side panel, and click "Enable version control interface for RStudio projects" and enter the Git executable as `/usr/bin/git` if these are not already specified. You do not need to specify a SSH RSA Key since we will not be using `ssh`.
+We will use the RStudio's builtin `git`, but you should also install `git` on your local computer. You will need to activate `git` within RStudio if it is not already available. Go to `Global Options...` from the `Tools` menu, select Git/SVN from the side panel, and click "Enable version control interface for RStudio projects" and enter the Git executable as `/usr/bin/git` if these are not already specified. You do not need to specify a SSH RSA Key since we will not be using `ssh`.
