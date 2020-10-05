@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 1.4 Machine Learning Basics
+## 1.7 Machine Learning Basics
 
 An *algorithm* is a procedure specifying a set of steps to accomplish a task. 
 
@@ -22,7 +22,7 @@ Efficient algorithms that work sequentially or in parallel are the basis of pipe
 * optimization, and
 * machine learning. 
 
-### 1.4.1 Machine Learning Algorithms
+### 1.7.1 Machine Learning Algorithms
 
 Machine learning algorithms are largely used to predict, classify, or cluster.
 
@@ -37,6 +37,7 @@ Put another way, supervised learning is concerned with problems that have a meas
 ML algorithms form the basis of data products.
 
 Machine learning algorithms are expansive in their depth and breath as seen below.
+
 ![Machine Learning Algorithms](MachineLearningAlgorithms.png)
 
 The culture wars:
@@ -90,6 +91,8 @@ which partitions accuracy it into two expressions (assuming the $X$'s are fixed)
 Within a scientific context, it is often of more interest to understand the relationship between the predictors and the response, including which predictors are associated with the response, than in just the accuracy of the prediction model. As such, the interpretation of a model often trumps slight improvements in the model.
 
 It is possible to define measures of flexibility and interpretability for models. Generally, a more flexible model is less interpretable and vice versa. For example, linear regression is relatively interpretable, but has low flexibility. On the other hand, bagging and boosting have limited interpretability, but are very flexible.
+
+### 1.7.2 Model Assessment
 
 #### Measuring model accuracy
 

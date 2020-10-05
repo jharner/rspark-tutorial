@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 1.4 Data Structures
+## 1.5 Data Structures
 
 Material in this section is partially based on Hadley's Wickham's [Advanced R Data Structures chapter](http://adv-r.had.co.nz/Data-structures.html).
 
@@ -37,7 +37,7 @@ n-dim      | array         |
 
 These data structures are now discussed including their metadata as specified in the data's attributes.
 
-### 1.4.1 Atomic vectors
+### 1.5.1 Atomic vectors
 
 The common types of atomic vectors are:  
 
@@ -114,7 +114,7 @@ matrix(1:12, nrow=6, ncol=2)
 array(1:12, c(3, 2, 2))
 ```
 
-### 1.4.2 Lists
+### 1.5.2 Lists
 
 Lists differ from atomic vectors because their elements can be of any type, including lists, i.e., a lists is a recursive data structure. You construct lists by using `list()`.
 ```{r}
@@ -148,7 +148,7 @@ l.named[[2]]
 
 More information on lists is available in [An Introcution to R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Lists).
 
-### 1.4.3 Data Frames
+### 1.5.3 Data Frames
 
 A data frame is a list of equal-length vectors in which the elements of each column must be of the same type, but the columns can be of different types.
 ```{r}

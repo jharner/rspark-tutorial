@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 1.5 Functions
+## 1.6 Functions
 
 To understand computations in R, two slogans are helpful:   
 "Everything that exists is an object. Everything that happens is a function call."  
@@ -19,7 +19,7 @@ To understand computations in R, two slogans are helpful:
 
 Material in this section is based partially on Hadley's Wickham's [Advanced R Functions chapter](http://adv-r.had.co.nz/Functions.html).
 
-### 1.5.1 Function Definition
+### 1.6.1 Function Definition
 
 Functions have inputs and produce an output based on the code inside a function. The following code illustrates how a function is defined:
 ```{r}
@@ -41,7 +41,7 @@ environment(f)
 ```
 In this case `a` is found in the Global environment, which is where the function is defined.
 
-### 1.5.2 Lexical Scoping
+### 1.6.2 Lexical Scoping
 
 Scoping refers to how R binds values to variables. R supports two types of scoping:  
 
@@ -70,7 +70,7 @@ As can be seen, `g(20) = 12`, i.e., R uses lexical scoping. Generally, dynamic s
 
 The rules for scoping can become complicated as the this simple example illustrates. To understand scoping, it is important to understand environments in R. Hadley Wickham has an in depth discussion in the [Advanced R Environments chapter](http://adv-r.had.co.nz/Environments.html).
 
-### 1.5.3 Functional Programming
+### 1.6.3 Functional Programming
 
 “An object is data with functions. A closure is a function with data.”  
 — John D. Cook
@@ -104,7 +104,7 @@ The complement to a closure is a *functional*, a function that takes a function 
 
 Hadley Wickham has an in depth discussion of closures, functionals, and function operators in the [Advanced R Functional Programming chapter](http://adv-r.had.co.nz/Functional-programming.html). The following example illustrates many of the concepts in functional programming.
 
-### 1.5.4 Finding the Root of a Differentiable Function
+### 1.6.4 Finding the Root of a Differentiable Function
 
 Newton's method for finding a root of a differentiable function $f$ takes a guess $x$ and computes hopefully an improved guess as:
 $$ x - \frac{f(x)}{Df(x)}$$
@@ -150,7 +150,7 @@ newton_search(f = sin, df = Dsin, guess = 3)
 newton_search(f = sin, df = Dsin, guess = 3, conv = 0.000001)
 ```
 
-### 1.5.5 Finding the Maximum Likelihood Estimator of a Parameter
+### 1.6.5 Finding the Maximum Likelihood Estimator of a Parameter
 
 The log-likelihood of the gamma distribution with scale parameter 1 can be written as:
 $$ (\alpha -1)s -n\log\Gamma(\alpha) $$
