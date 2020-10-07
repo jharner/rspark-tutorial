@@ -34,7 +34,7 @@ head(slump_sdf)
 First we need to split `slump_sdf` into a training and a test Spark DataFrame.
 ```{r}
 slump_partition <- tbl(sc, "slump_sdf") %>%
-  sdf_partition(training = 0.7, test = 0.3, seed = 2)
+  sdf_random_split(training = 0.7, test = 0.3, seed = 2)
 slump_train_sdf <- slump_partition$training
 slump_test_sdf <- slump_partition$test
 ```
