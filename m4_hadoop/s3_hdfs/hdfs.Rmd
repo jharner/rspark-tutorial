@@ -72,12 +72,15 @@ We can list the files and directories with a `-ls` option, make a directory with
 hdfs dfs -mkdir temp
 hdfs dfs -ls
 ```
-At this point, the directory has not content. Copy a file form the local filesystem into hdfs and list.
+At this point, the directory has no content. Copy `cdat.csv` form the local filesystem into hdfs and list.
 ```{bash}
 # set the local working directory to s2_hdfs
 cd /home/rstudio/rspark-tutorial/m4_hadoop/s3_hdfs
 hdfs dfs -copyFromLocal cdat.csv temp/
 hdfs dfs -ls temp/
+```
+Disk usage by itself can be found using the `du` option.
+```{bash}
 hdfs dfs -du
 ```
 Remove the file and directory
@@ -85,7 +88,7 @@ Remove the file and directory
 hdfs dfs -rm -f temp/cdat.csv
 hdfs dfs -rmdir temp
 ```
-These commands illustrate how data can be loaded from the local filesystem into hdfs. In the next chapter we will illustrate how to load data into hdfs from within R. However, in a production system data would typically be loaded into hdfs using Sqoop as an interface to a database or Flume for real-time data.
+These commands illustrate how data can be loaded from the local filesystem into hdfs. Below we illustrate how to load data into hdfs from within R. However, in a production system data would typically be loaded into hdfs using Sqoop as an interface to a database or Flume for real-time data. Kafka provides a more modern interface to both static and real-time data.
 
 HDFS has a permissions model for files and directories that is much like the POSIX model.
 

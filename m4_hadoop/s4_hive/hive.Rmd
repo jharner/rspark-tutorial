@@ -1,7 +1,7 @@
 ---
 title: "Data Storage (Hive and HBase)"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -31,7 +31,7 @@ HiveServer1 used Hive CLI (command line interface) to send SQL commands to Hive 
 The CLI used in HiveServer2 is `beeline`. Beeline is a JDBC client based on the [SQLLine CLI](http://sqlline.sourceforge.net), which communicates with the HiveServer using Thrift APIs. The connection to HiveServer2 is a JDBC URL. The following code can be executed line-by-line in RStudio's Shell.
 ```
 /opt/hive/bin/beeline -u jdbc:hive2://hive:10000 
-or
+# or
 # /opt/hive/bin/beeline
 # !connect jdbc:hive2://hive:10000
 # The user name is `hive` with no password (hit return)
