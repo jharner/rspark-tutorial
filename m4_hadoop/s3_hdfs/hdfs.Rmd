@@ -1,7 +1,7 @@
 ---
 title: "HDFS"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -20,7 +20,7 @@ HDFS is Hadoop’s main filesystem, but Hadoop has a general-purpose filesystem 
 
 ### 4.3.1 HDFS Design
 
-HDFS is a filesystem designed for storing very large files with streaming data access patterns, running on clusters of commodity hardware.  
+HDFS is a filesystem designed for storing very large files with streaming data access, running on clusters of commodity hardware.  
 
 * Very large files: Many [data lakes](https://en.wikipedia.org/wiki/Data_lake) are in the gigabytes, terabytes, or even petabytes in size.  
 * Streaming data access: HDFS is built around the idea that the most efficient data processing pattern is a write-once, read-many-times pattern. A dataset is typically generated or copied from source, and then various analyses are performed on that dataset over time.  
@@ -60,7 +60,7 @@ The `hdfs` command of interest is `dfs` which runs a filesystem command on the d
 `hdfs dfs` shows the `dfs` commands and their options. Alternately, you can use `hadoop fs` to issue commands.
 ```{bash}
 # show the options for the dfs command
-hdfs dfs
+hdfs dfs | head
 # hadoop fs
 # echo $? show the exit code in the last command, which should be 0
 echo $?
@@ -72,7 +72,7 @@ We can list the files and directories with a `-ls` option, make a directory with
 hdfs dfs -mkdir temp
 hdfs dfs -ls
 ```
-Import a file into hdfs and list.
+At this point, the directory has not content. Copy a file form the local filesystem into hdfs and list.
 ```{bash}
 # set the local working directory to s2_hdfs
 cd /home/rstudio/rspark-tutorial/m4_hadoop/s3_hdfs

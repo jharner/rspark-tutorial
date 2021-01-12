@@ -1,7 +1,7 @@
 ---
 title: "Hadoop"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -17,7 +17,7 @@ Hadoop is an open-source framework for large-scale data storage and distributed 
 
 It is a general framework, applicable to a variety of domains and programming languages. One use case is to drive large R jobs.
 
-An overview of the Hadoop ecosystem as implemented in the Hortonworks Data Platform (HDP) is given here: [Hortonworks Data Platform](https://www.cloudera.com/products/hdp.html). It is based on a centralized architecture (YARN). Hadoop supports many technologies built on YARN, including MapReduce and Spark.
+An overview of the Hadoop ecosystem as implemented in the Hortonworks Data Platform (HDP), now owned by Clouders, is given here: [Hortonworks Data Platform](https://www.cloudera.com/products/hdp.html). It is based on a centralized architecture (YARN). Hadoop supports many technologies built on YARN, including MapReduce and Spark.
 
 Batch data is collected and ingested into HDFS using Flume or Sqoop. Analysis jobs, written in Hadoop MapReduce, Spark, or other tools, are submitted to the Resource Manager for YARN, which decomposes each job into tasks that are run on the worker nodes, managed by a Node Manager. Even for interactive tools like Hive and Spark SQL, the same job submission process is used when the actual queries are executed as jobs. See O'Reilly's [Fast Data Architectures for Streaming Applications](http://www.oreilly.com/data/free/fast-data-architectures-for-streaming-applications.csp), which contrasts batch processing with stream processing.
 
