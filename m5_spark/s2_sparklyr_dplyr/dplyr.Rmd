@@ -1,7 +1,7 @@
 ---
 title: "Spark dplyr"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -16,9 +16,12 @@ Load `sparklyr` and establish the Spark connection.
 library(dplyr, warn.conflicts = FALSE)
 library(sparklyr)
 
-# start the sparklyr session
-master <- "local"
-# master <- "spark://master:7077"
+# start the sparklyr session locally or to the master container
+if(system("test \"/bin/spark-class/\" && echo 1 || echo 0") == 1) {
+  master <- "spark://master:7077"
+} else{
+  master <- "local"
+}
 sc <- spark_connect(master = master)
 ```
 `sparklyr` has a `dplyr` compatible back-end to Spark.
@@ -95,7 +98,7 @@ mean_dep_delay_sdf <- summarise(flights_sdf, mean(dep_delay))
 mean_dep_delay_sdf # this statement causes Spark to evaluate the above expression
 class(mean_dep_delay_sdf)
 ```
-The result is identical to the computation above, but here we can explore the structure of `mean_dep_delay_sdf`. Notice its inheritance path. `mean_dep_delay_sdf` is the tibble version of a Spark DataFrame, which is a type of SQL tibble, which is a lazy tibble, i.e., not evaluated from the first statement in the chunk.
+The result is identical to the computation above, but here we can explore the structure of `mean_dep_delay_sdf`. Notice its inheritance path. `mean_dep_delay_sdf` is the table version of a Spark DataFrame, which is a type of SQL table, which is a lazy table, i.e., not evaluated from the first statement in the chunk.
 
 Next we collect `mean_dep_delay_sdf` into R and get an R data frame.
 ```{r}

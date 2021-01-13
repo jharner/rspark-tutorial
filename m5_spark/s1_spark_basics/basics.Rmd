@@ -1,7 +1,7 @@
 ---
 title: "Spark Basics"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -16,13 +16,14 @@ The `sparklyr` package provides an R frontend to Spark based on a `dplyr` interf
 library(dplyr, warn.conflicts = FALSE)
 library(sparklyr)
 
-# start the sparklyr session locally, on the master container, or on AWS
-master <- "local"
-# master <- "spark://master:7077"
-# master <- "yarn"
-sc <- spark_connect(master = master)
-# Location of SPARK_HOME using an R funtions
 Sys.getenv("SPARK_HOME")
+# start the sparklyr session locally or to the master container
+if(system("test \"/bin/spark-class/\" && echo 1 || echo 0") == 1){
+  master <- "spark://master:7077"
+} else{
+  master <- "local"
+}
+sc <- spark_connect(master = master)
 ```
 Spark's home is located in `/opt/spark` on Unbuntu 18.04.
 

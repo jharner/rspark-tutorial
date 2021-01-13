@@ -1,7 +1,7 @@
 ---
 title: "Spark Apply"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -16,11 +16,13 @@ Load `sparklyr` and establish the Spark connection.
 library(dplyr, warn.conflicts = FALSE)
 library(sparklyr)
 
-# start the sparklyr session
-master <- "local"
-# master <- "spark://master:7077"
-sc <- spark_connect(master, spark_home = Sys.getenv("SPARK_HOME"),
-                    method = c("shell"), app_name = "sparklyr")
+# start the sparklyr session locally or to the master container
+if(system("test \"/bin/spark-class/\" && echo 1 || echo 0") == 1){
+  master <- "spark://master:7077"
+} else{
+  master <- "local"
+}
+sc <- spark_connect(master = master)
 ```
 
 ## 5.4 Spark Apply
