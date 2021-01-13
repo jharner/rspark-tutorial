@@ -1,10 +1,10 @@
 ---
 title: "Linear Regression"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -15,10 +15,9 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(dplyr, warn.conflicts = FALSE)
 
 library(sparklyr)
-# start the sparklyr session
-master <- "local"
 # master <- "spark://master:7077"
-sc <- spark_connect(master)
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 6.1 Linear Regression
@@ -92,7 +91,7 @@ How do we select which predictors (features) are important?
 The algorithm is simple:
 
 1. Start with $M_0$, the null model.  
-2. For $k = 0, 1, \ldots, p-1$ augment the predictors in $M_k$ with one additional predictor and then pick the one with the highest $R^2$ or lowest RSS. Call this $M_{k+1}$.  
+2. For $k = 0, 1, \ldots, p - 1$ augment the predictors in $M_k$ with one additional predictor and then pick the one with the highest $R^2$ or lowest RSS. Call this $M_{k+1}$.  
 3. Select the best model from $M_0, M_1, \ldots, M_p$ using cross validation prediction error, $C_p$, AIC, BIC, or the adjusted $R^2$.  
 
 The method has far fewer models ($1 + p(p+1)/2$) than best subset selection ($2^p$). Also, this method can be used for the high-dimensional cases when $p > n$.
@@ -102,7 +101,7 @@ The method has far fewer models ($1 + p(p+1)/2$) than best subset selection ($2^
 The algorithm follows:  
 
 1. Start with $M_p$, the model with all predictors.  
-2. For $k = p, p-1, \ldots, 1$ consider all $k$ models that contain all but one of the predictors in $M_k$, i.e., each containing $k − 1$ predictors, and then pick the one with the highest $R^2$ or lowest RSS. Call this $M_{k-1}$.  
+2. For $k = p, p - 1, \ldots, 1$ consider all $k$ models that contain all but one of the predictors in $M_k$, i.e., each containing $k _ 1$ predictors, and then pick the one with the highest $R^2$ or lowest RSS. Call this $M_{k-1}$.  
 3. Select the best model from $M_0, M_1, \ldots, M_p$ using cross validation prediction error, $C_p$, AIC, BIC, or the adjusted $R^2$.  
 
 The backward selection approach searches $1 + p(p+1)/2$ models. In this case, $n$ must be larger than $p$.
@@ -188,11 +187,11 @@ slump_partition <- tbl(sc, "slump_sdf") %>%
 Initially, we fit a model with just `fly_ash`, which is thought to be the best single predictor of `compressive_strength`. This is difficult to check since their is no automatic selection method in Spark other than regularization.
 ```{r}
 slump_lr_p1_fit <- slump_partition$training %>%
-  ml_linear_regression(compressive_strength ~ fly_ash)
+  ml_linear_regression(compressive_strength ~ cement)
 summary(slump_lr_p1_fit)
 tidy(slump_lr_p1_fit)
 ```
-`fly_ash` is highly significant, but the $R^2$ is low.
+`cement` is highly significant, but the $R^2$ is low.
 
 The full model is now run.
 ```{r}
@@ -202,7 +201,7 @@ slump_lr_full_fit <- slump_partition$training %>%
 summary(slump_lr_full_fit)
 tidy(slump_lr_full_fit)
 ```
-$R^2 = 0.899$, but some of the variables are not significant.
+$R^2 = 0.907$, but some of the variables are not significant.
 
 We eliminate `sp` since it has the largest $p$-value.
 ```{r}
@@ -212,7 +211,7 @@ slump_lr_p6_fit <- slump_partition$training %>%
 summary(slump_lr_p6_fit)
 tidy(slump_lr_p6_fit)
 ```
-$R^2 = 0.898$ is nearly as high as for the full model. 
+$R^2 = 0.907$ is as high as for the full model. 
 
 We next remove `slag`.
 ```{r}
@@ -222,7 +221,7 @@ slump_lr_p5_fit <- slump_partition$training %>%
 summary(slump_lr_p5_fit)
 tidy(slump_lr_p5_fit)
 ```
-The $R^2 = 0.895$ is still very high.
+The $R^2 = 0.907$ is still very high.
 
 We next remove `fine_aggr` since its statistic is the smallest.
 ```{r}
@@ -231,7 +230,7 @@ slump_lr_p4_fit <- slump_partition$training %>%
 summary(slump_lr_p4_fit)
 tidy(slump_lr_p4_fit)
 ```
-The $R^2 = 0.889$ barely drops.
+The $R^2 = 0.903$ barely drops.
 
 We next remove `coarse_aggr` for completeness.
 ```{r}
@@ -240,7 +239,7 @@ slump_lr_p3_fit <- slump_partition$training %>%
 summary(slump_lr_p3_fit)
 tidy(slump_lr_p3_fit)
 ```
-The $R^2 = 0.834$ now drops about 5%.
+The $R^2 = 0.863$ now drops about 5%.
 
 Now `water` has the largest $p$-value.
 ```{r}
@@ -328,7 +327,7 @@ cbind(terms, slump_lr_errors) %>%
 ```
 We want a parsimonious model so it is clear that the 3-term model or the 4-term model should be chosen. The variables in the final model are `cement`, `fly_ash`, and `water`. Arguably, `coarse_aggr` could also be in the model.
 
-The above approach is not guaranteed to be optimal since only a subset of the possible models are examined. Further, Spark depends on regularization for feature selection and does not support automatic variable selection based on optimality criteria. This example will be redone using regularization in Chapter 10.
+The above approach is not guaranteed to be optimal since only a subset of the possible models are examined. Further, Spark depends on regularization for feature selection and does not support automatic variable selection based on optimality criteria. This example will be redone using regularization in Section 3 of this module.
 
 ```{r}
 spark_disconnect(sc)
