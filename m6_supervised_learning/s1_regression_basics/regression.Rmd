@@ -3,8 +3,8 @@ title: "Linear Regression"
 author: "Jim Harner"
 date: "1/12/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -296,9 +296,10 @@ y <- slump_test_df$compressive_strength
 
 We initialize the summary `data.frame` for the metrics with the null model.
 ```{r}
-terms <- c(0, 1, 2, 3, 4, 5, 6, 7)
-slump_lr_errors <- data.frame(rmse = sqrt(mean((y -mean(y))^2)),
-                              mae = mean(abs(y - mean(y))), model = "lr_null")
+terms <- c(1, 2, 3, 4, 5, 6, 7)
+# slump_lr_errors <- data.frame(rmse = sqrt(mean((y -mean(y))^2)),
+#                               mae = mean(abs(y - mean(y))), model = "lr_null")
+slump_lr_errors <- NULL
 ```
 
 We now calculate `rmse` and `mae` for each of the models.
@@ -325,7 +326,7 @@ cbind(terms, slump_lr_errors) %>%
   ggtitle("Performance Metric for the Slump Models") +
   xlab("Terms in the Model") + ylab("Error Measure")
 ```
-We want a parsimonious model so it is clear that the 3-term model or the 4-term model should be chosen. The variables in the final model are `cement`, `fly_ash`, and `water`. Arguably, `coarse_aggr` could also be in the model.
+We want a parsimonious model so it is clear that the 3-term model or the 4-term model should be chosen. The variables in the final model are `cement`, `fly_ash`, and `water`. Arguably, `coarse_aggr` and `fine_aggr` could also be in the model.
 
 The above approach is not guaranteed to be optimal since only a subset of the possible models are examined. Further, Spark depends on regularization for feature selection and does not support automatic variable selection based on optimality criteria. This example will be redone using regularization in Section 3 of this module.
 
