@@ -1,10 +1,10 @@
 ---
 title: "Multinomial Regression"
 author: "Jim Harner"
-date: "5/31/2020"
+date: "1/12/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,11 +13,11 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 `sparklyr` requires a `dplyr` compatible back-end to Spark. 
 ```{r}
 library(dplyr, warn.conflicts = FALSE)
+
 library(sparklyr)
-# start the sparklyr session
-master <- "local"
 # master <- "spark://master:7077"
-sc <- spark_connect(master)
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 6.6 Multinomial Regression

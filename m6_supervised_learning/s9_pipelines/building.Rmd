@@ -1,0 +1,226 @@
+---
+title: "Building Pipelines"
+author: "Jim Harner"
+date: "1/12/2021"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the `dplyr` and `sparklyr` libraries and establish the Spark connection.
+```{r}
+library(dplyr)
+
+library(sparklyr)
+# start the sparklyr session locally or to the master container
+if(system("test \"/bin/spark-class/\" && echo 1 || echo 0") == 1){
+  master <- "spark://master:7077"
+} else{
+  master <- "local"
+}
+sc <- spark_connect(master = master)
+
+# path.data <- paste("hdfs://hadoop:9000/user/", Sys.getenv("USER"), "/data/slump.csv", sep = "")
+# For data knitted on the local filesystem:
+path.data <- paste0("file:///home/", Sys.getenv("USER"), "/rspark-book/data/slump.csv")
+path.data
+```
+
+## 6.9 Creating Pipelines
+
+So far we have been building machine learning (ML) workflows using an interface to Spark based on `dplyr` verbs and the R pipe operator. In order to productionize machine learning code, we need to formalize the steps comprising  ML Pipelines, i.e., use the Spark API. 
+
+## 8.1 ML Pipelines
+
+An ML pipeline consists of a sequence of transformers and estimators, each forming a pipeline stage, which define the ML workflow. The building blocks of the *pipeline* consists of:
+
+* *transformers*: algorithms for converting an input DataFrame to an output DataFrame;  
+* *estimators*: algorithms for fitting a model to an input DataFrame to produce a transformer.  
+
+Transformers are implemented by an by a `transform` function and are of two types:  
+
+* feature transformers convert the input DataFrame by altering the features or by creating new featues in the output DataFrame;     
+* learned models convert the input DataFrane containng features to another DataFrame appending the predicted values (or labels) based on the fitted model.  
+
+Estimators are learning algorithms that train (or fit) data by implementing a `fit` function. It inputs a DataFrame and produces a Model, which is a Transformer.
+
+A pipeline model is a pipeline that has been fitted to the data with all estimators being converted to transformers.
+
+### 6.9.1 Concrete Slump Pipeline
+
+Load `slump.csv` into Spark with `spark_read_csv` from the local filesystem.
+```{r}
+slump_sdf <- spark_read_csv(sc, "slump_sdf", path = path.data)
+head(slump_sdf)
+```
+
+First we need to split `slump_sdf` into a training and a test Spark DataFrame.
+```{r}
+slump_partition <- tbl(sc, "slump_sdf") %>%
+  sdf_random_split(training = 0.7, test = 0.3, seed = 2)
+slump_train_sdf <- slump_partition$training
+slump_test_sdf <- slump_partition$test
+```
+
+Machine learning algorithms and feature transformers generally require the input to be a vector. The training input variables are combined into a feature vector and then passed to `ft_vector_assembler` as the `input_col`. The `output_col` is a list assembled by rows, i.g., observations. The training assembled features are then standardized to have mean 0 and standard deviation 1 using `ft_standard_scaler`.
+```{r}
+features <- c("cement", "slag", "fly_ash", "water", "sp", "coarse_aggr", "fine_aggr")
+
+slump_train_sdf %>%
+  ft_vector_assembler(input_col = features,
+                      output_col = "features_assembled") %>%
+  ft_standard_scaler(input_col = "features_assembled",
+                     output_col = "features_scaled",
+                     with_mean = TRUE) %>%
+  glimpse()
+```
+We next define a pipeline based on the two stages above, i.e., a `vector_assembler` (a Transformer), a `standard_scaler` (an Estimator), and a third stage: `linear_regression` (an Estimator). The `pipeline` itself is an Estimator.
+```{r}
+slump_pipeline <- ml_pipeline(sc) %>%
+  ft_vector_assembler(input_col = features,
+                      output_col = "features_assembled") %>%
+  ft_standard_scaler(input_col = "features_assembled",
+                     output_col = "features_scaled",
+                     with_mean = TRUE) %>%
+  ml_linear_regression(features_col = "features_scaled",
+                label_col = "compressive_strength")
+class(slump_pipeline)
+slump_pipeline
+```
+The pipeline can then be fit (trained) on the training data: `slump_train_sdf`.
+```{r}
+slump_full_model <- slump_pipeline %>%
+  ml_fit(slump_train_sdf)
+class(slump_full_model)
+slump_full_model
+```
+It is difficult to reveal the 
+
+Now get the fitted values on the test data.
+```{r}
+(slump_fitted_full_test <- ml_transform(slump_full_model, slump_test_sdf))
+class(slump_fitted_full_test)
+slump_fitted_full_test %>% 
+  summarize(mean(abs(compressive_strength - prediction)))
+```
+
+### 6.9.2 Hyperparameter Tuning
+
+Model selection is a critical, but difficult task in the effort to find the "best model." Rather than doing variable selection using optimal statistical criteria, Spark uses regularization. The process of selecting a model is done by hyperparameter tuning, or for short "tuning." In addition to tuning the regression regularization parameter, $\lambda$, and the elastic net parameter, $\alpha$, other hyperparameters, e.g., whether or not to substract the mean when standardizing, can be included.
+
+Two tuning approaches are available for tuning in Spark:  
+
+* train-validation split using `ml_train_validation_split`;  
+* $k$-fold cross-validation using `ml_cross_validator`.  
+
+In both cases you need three arguments for tuning:  
+
+* `estimator`: the algorithm or pipeline to tune;  
+* `estimator_param_map`: the parameter grid to search over;  
+* `evaluator`: the metric that measure how well the fitted model does on held-out data.  
+
+Model selection is done by:  
+
+* splitting the input data into separate training and test datasets;  
+* iterating through the parameter grid for each training-test pair;  
+  + using `estimator` for getting the fitted model;  
+  + evaluating the fitted model using the `evaluator`;
+* selecting the best performing model.  
+
+We consider each in turn for the `slump` data.
+
+#### Train-validation split
+
+The `ml_train_validation_split` function evaluates the training-test pair once for each element of the parameter grid. The data is split into training and test datasets by the `train_ratio` argument.
+
+```{r}
+slump_tv <- ml_train_validation_split(sc,
+  estimator = slump_pipeline,
+  estimator_param_map = list(
+    linear_regression = list(
+      reg_param = c(0.0, 0.0025, 0.005, 0.0075, 0.01, 0.02, 0.04, 0.06, 0.1, 0.15),
+      elastic_net_param = c(0.0, 1.0)
+    )
+  ),
+  evaluator = ml_regression_evaluator(sc, label_col = "compressive_strength",
+                                      metric_name = "mae"),
+  train_ratio = 0.7,
+  parallelism = 3,
+  seed = 2)
+class(slump_tv)
+slump_tv
+```
+
+Fit the models over the parameter grid and choose the best model. The best model is displayed as part of the output, but it can be found directly from: `slump_tv_model$best_model`.
+```{r}
+slump_tv_model <- ml_fit(slump_tv, slump_train_sdf)
+class(slump_tv_model)
+slump_tv_model # slump_tv_model$best_model
+```
+
+Inspect the evaluation metric over the parameter grid.
+```{r}
+ml_validation_metrics(slump_tv_model) %>%
+  arrange(elastic_net_param_1, reg_param_1)
+```
+
+Make predictions on the test data uaing the "best model."
+```{r}
+(slump_fitted_tv_test <- ml_transform(slump_tv_model, slump_test_sdf))
+class(slump_fitted_tv_test)
+slump_fitted_tv_test %>%
+  summarize(mean(abs(compressive_strength - prediction)))
+```
+
+#### Cross-validation
+
+Cross-validation splits the dataset into $k$ folds, which provides the training and test datasets. This is done by `ml_cross_validator`. The evaluation metric is computed by averaging its value over the $k$ models produced by the `estimator` over the $k$ training-test pairs. Cross-validation is more compute intensive than the train-validation split, but potentially is more reliable.
+
+```{r}
+slump_cv <- ml_cross_validator(sc,
+  estimator = slump_pipeline,
+  estimator_param_map = list(
+    linear_regression = list(
+      reg_param = c(0.0, 0.0025, 0.005, 0.0075, 0.01, 0.02, 0.04, 0.06, 0.1, 0.15),
+      elastic_net_param = c(0.0, 1.0)
+    )
+  ),
+  evaluator = ml_regression_evaluator(sc, label_col = "compressive_strength",
+                                      metric_name = "mae"),
+  num_folds = 10,
+  parallelism = 3)
+
+slump_cv
+```
+
+Make predictions on the train data using the "best model."
+```{r}
+slump_cv_model <- ml_fit(slump_cv, slump_train_sdf)
+slump_cv_model
+```
+
+Inspect the evaluation metric over the parameter grid.
+```{r}
+ml_validation_metrics(slump_cv_model) %>%
+  arrange(elastic_net_param_1, reg_param_1)
+```
+
+Make predictions on the test data uaing the "best model."
+```{r}
+(slump_fitted_cv_test <- ml_transform(slump_cv_model, slump_test_sdf))
+slump_fitted_cv_test %>%
+  summarize(mean(abs(compressive_strength - prediction)))
+```
+
+Pipelines can be serialized to disk and be accessed by other Spark APIs such as Python.
+```
+ml_save(slump_cv_model$best_model, path = getwd(), overwrite = TRUE)
+```
+
+```{r}
+spark_disconnect(sc)
+```
+

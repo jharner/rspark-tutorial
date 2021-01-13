@@ -1,10 +1,9 @@
 ---
 title: "Tree Models"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
-  html_notebook: default
   pdf_document: default
 ---
 
@@ -21,16 +20,18 @@ library(modelr)
 library(ggplot2)
 
 library(sparklyr)
-sc <- spark_connect(master = "local")
+# master <- "spark://master:7077"
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 6.7 Other ML Algorithms
 
 ### 6.7.1 Basics
 
-Spark 2.4.3 and `sparklyr` have many algorithms for classification. We have been exposed to logistic regression in Sections 6.4 and 6.5. We will compare 6 classification algorithms in this chapter.
+Spark 3 and `sparklyr` have many algorithms for classification. We have been exposed to logistic regression in Sections 6.4 and 6.5. We will compare 6 classification algorithms in this chapter.
 
-* Logistic Regression: models the posterior conditional probabilities of the $k$ classes by a linear functions in $X$, while ensuring that they sum to one and remain in [0,1]. The model is specified in terms of $k-1$ logit transformations with the last class as the denominator in the odds-ratios.
+* Logistic Regression: models the posterior conditional probabilities of the $k$ classes by a linear functions in $X$, while ensuring that the probabilities sum to one and remain in [0,1]. The model is specified in terms of $k-1$ logit transformations with the last class as the denominator in the odds-ratios.
 
 * Decision Tree (DT): use weak learners which output real values for splits. These outputs can be added together, allowing subsequent model outputs to be added and to correct the residuals in the predictions. Trees choose the best split points based on purity scores, e.g., Gini, or minimizing the loss. Regularization can be used to reduce overfitting. The output variable can be discrete (classification) or continuous (regression).
 
@@ -71,7 +72,7 @@ wine_red_test_tbl <- wine_red_partition$test
 
 #### Classifier Comparison
 
-At this point, we will compare logistics regression with other classification methods. The training data is used here. The 7-variable model from Section 7.3 is used.
+At this point, we will compare logistics regression with other classification methods. The training data is used here. The 7-variable model from Section 6.4 is used.
 ```{r}
 ## Specify the model formula
 ml_formula <- formula(quality_bin ~ fixed_acidity + volatile_acidity + citric_acid +
@@ -150,6 +151,7 @@ ggplot(ml_gains, aes(x = bin, y = prop, colour = model)) +
   ggtitle("Lift Chart for Predicting Survival - Test Data Set") + 
   xlab("") + ylab("")
 ```
+
 #### AUC and accuracy
 
 Spark does not provide output for computing the ROC curve, but the Area under the ROC curve (AUC) is provided. The higher the AUC the better.
@@ -205,7 +207,7 @@ feature_importance %>%
   xlab("") +
   ggtitle("Feature Importance")
 ```
-`alcohol` is the most important feature and `sulphates` is the second most important feature for the decision tree and random forest models, whereas the order is reversed for the gradient boosted model.  Other features have varying degrees of predictive importance. The features in Gradient Boosted Trees are more even in terms of importance.
+`alcohol` is the most important feature with `volatile acidity` and `sulphates` as the the second and third most important features with the order depending on the type of model. Other features have varying degrees of predictive importance. The features in Gradient Boosted Trees are more even in terms of importance.
 
 
 ```{r}
