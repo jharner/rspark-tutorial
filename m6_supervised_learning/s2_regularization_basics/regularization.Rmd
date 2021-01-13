@@ -1,7 +1,7 @@
 ---
 title: "Regularization Basics"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2020"
 output:
   html_document: default
   pdf_document: default
@@ -19,7 +19,9 @@ library(readr)
 library(glmnet)
 
 library(sparklyr)
-sc <- spark_connect(master = "local")
+# master <- "spark://master:7077"
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 6.2 Regularization Basics
@@ -42,11 +44,9 @@ General reference:
 
 [MLlib](https://spark.apache.org/docs/latest/ml-guide.html)
 
-The RDD-based algorithms can be seen here:
+The RDD-based algorithms, which are now in maintenance mode, can be seen here:
 
 [RDD Optimizaton](https://spark.apache.org/docs/latest/mllib-optimization.html)
-
-It is now in maintenance mode.
 
 The new API is Spark DataFrame based:
 
@@ -137,7 +137,7 @@ slump_glm_lasso_cv <- cv.glmnet(x = slump.x, y = slump.y, type.measure = "mse",
                                 alpha = 1, nfolds = 10)
 slump_glm_lasso_cv$lambda.min
 ```
-Our choice of $\lambda$ based on 10-fold cross-validation is less than what we choose in Section 6.3.
+Our choice of $\lambda$ based on 10-fold cross-validation is greater than what we choose in Section 6.3.
 
 The coefficient estimates, based on 10-fold cross-validation, are:
 ```{r}

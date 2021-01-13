@@ -1,10 +1,10 @@
 ---
 title: "Linear Regression"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,9 +17,9 @@ library(dplyr, warn.conflicts = FALSE)
 # load the sparklyr package
 library(sparklyr)
 # start the sparklyr session
-master <- "local"
 # master <- "spark://master:7077"
-sc <- spark_connect(master)
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 6.3 Concrete Slump Test Regression
@@ -110,7 +110,7 @@ slump_lr_errors %>%
   xlab("Lambda") + ylab("Error Measure")
 ```
 
-Based on the performance metrics, it is clear we want `lambda` to be small. However, we also want parsimony.
+Based on the performance metrics, it is clear we want `lambda` to be small, e.g., about 0.025. However, we also want parsimony.
 
 We now get the parameter estimates as `lambda` increases.
 ```{r}
