@@ -18,7 +18,9 @@ library(sparklyr)
 
 Sys.getenv("SPARK_HOME")
 # start the sparklyr session locally or to the master container
-if(system("test \"/bin/spark-class/\" && echo 1 || echo 0") == 1){
+# test \"/bin/spark-class/\" && echo 1 || echo 0
+# if [ -d /bin/spark-class/ ]; then echo 1; else echo 0; fi
+if(system("if [ -d /bin/spark-class/ ]; then echo 1; else echo 0; fi ") == 1){
   master <- "spark://master:7077"
 } else{
   master <- "local"

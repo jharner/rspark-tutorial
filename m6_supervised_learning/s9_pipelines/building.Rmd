@@ -4,6 +4,7 @@ author: "Jim Harner"
 date: "1/12/2021"
 output:
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -40,7 +41,7 @@ An ML pipeline consists of a sequence of transformers and estimators, each formi
 * *transformers*: algorithms for converting an input DataFrame to an output DataFrame;  
 * *estimators*: algorithms for fitting a model to an input DataFrame to produce a transformer.  
 
-Transformers are implemented by an by a `transform` function and are of two types:  
+Transformers are implemented by a `transform` function and are of two types:  
 
 * feature transformers convert the input DataFrame by altering the features or by creating new featues in the output DataFrame;     
 * learned models convert the input DataFrane containng features to another DataFrame appending the predicted values (or labels) based on the fitted model.  
@@ -65,7 +66,7 @@ slump_train_sdf <- slump_partition$training
 slump_test_sdf <- slump_partition$test
 ```
 
-Machine learning algorithms and feature transformers generally require the input to be a vector. The training input variables are combined into a feature vector and then passed to `ft_vector_assembler` as the `input_col`. The `output_col` is a list assembled by rows, i.g., observations. The training assembled features are then standardized to have mean 0 and standard deviation 1 using `ft_standard_scaler`.
+Machine learning algorithms and feature transformers generally require the input to be a vector. The training input variables are combined into a feature vector and then passed to `ft_vector_assembler` as the `input_col`. The `output_col` is a list assembled by rows, i.e., observations. The training assembled features are then standardized to have mean 0 and standard deviation 1 using `ft_standard_scaler`.
 ```{r}
 features <- c("cement", "slag", "fly_ash", "water", "sp", "coarse_aggr", "fine_aggr")
 
@@ -97,7 +98,6 @@ slump_full_model <- slump_pipeline %>%
 class(slump_full_model)
 slump_full_model
 ```
-It is difficult to reveal the 
 
 Now get the fitted values on the test data.
 ```{r}
