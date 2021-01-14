@@ -1,7 +1,7 @@
 ---
 title: "K-means Clustering"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -14,8 +14,11 @@ library(tibble)
 library(dplyr)
 library(readr)
 library(ggplot2)
+
 library(sparklyr)
-sc <- spark_connect(master = "local")
+# master <- "spark://master:7077"
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 7.2 K-means Clustering
@@ -41,7 +44,7 @@ i.e., if $x_i$ is closest to the $j^{\mbox{th}}$ seed point. At the end of the f
 
 For each cluster, e.g., $C_r$, compute the cluster centroid $\bar{x}_r$. The  $\bar{x}_r$  become the new seed points and the observations are formed into clusters using the above spherical (Euclidean) distances. This process is iterated until the cluster means do not change.
 
-### 8.2.2 K-means on the State Crime Data
+### 7.2.2 K-means on the State Crime Data
 
 Read in the crime data for the 50 states:
 ```{r}
@@ -140,7 +143,7 @@ state_crime_pca_proj %>%
              pch = '+', size = 5) +
   scale_color_discrete(name = "Predicted Cluster", labels = paste("Cluster", 1:4))
 ```
-This plot agrees with the analysis in Section 8.2.2 except that we reversed the scale of PC2 and the clusters are labeled by different colors. These changes are not relevant to cluster identification.
+This plot agrees with the analysis in Section 7.2.2 except that we reversed the scale of PC2 and the clusters are labeled by different colors. These changes are not relevant to cluster identification.
 
 ```{r}
 spark_disconnect(sc)

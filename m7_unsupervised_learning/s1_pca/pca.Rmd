@@ -1,7 +1,7 @@
 ---
 title: "Principal Component Analysis"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -12,15 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
 library(readr)
+
 library(sparklyr)
-sc <- spark_connect(master = "local")
+# master <- "spark://master:7077"
+master <- "local"
+sc <- spark_connect(master = master)
 ```
 
 ## 7.1 Principal Component Analysis (PCA)
 
 ### 7.1.1 PCA Basics
 
-Principal Component Analysis (PCA) is used to determine the structure of a multivariate data set composed of numerical variables. Specifically, the most important purposes of PCA are:   
+Principal Component Analysis (PCA) is used to determine the structure of a multivariate data set composed of numerical variables. Specifically, the most important purposes of PCA are:  
+
 1. to reduce the dimensionality of variable space;    
 2. to find the linear combinations of the original variables which account for most of the variation in the multivariate system.  
 
