@@ -1,7 +1,7 @@
 ---
 title: "dplyr Backends"
 author: "Jim Harner"
-date: "10/4/2020"
+date: "1/12/2021"
 output:
   html_document: default
   pdf_document: default
@@ -14,7 +14,9 @@ The `dplyr` provides a grammar of data manipulation using a set of verbs for tra
 ```{r}
 library(dplyr, warn.conflicts = FALSE)
 library(RPostgreSQL)
+
 library(sparklyr)
+sc <- spark_connect(master = "local")
 ```
 This section illustrates `dplyr` often using the NYC flight departures data as a context.
 ```{r}
@@ -147,7 +149,6 @@ explain(ranked)
 
 Spark can be used as a data source using `dplyr`.
 ```{r}
-sc <- spark_connect(master = "local")
 # Copy the R data.frame to a Spark DataFrame
 copy_to(sc, faithful, "faithful")
 faithful_tbl <- tbl(sc, "faithful")
