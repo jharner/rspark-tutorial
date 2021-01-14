@@ -29,6 +29,10 @@ Hadley's workflow is based on functions which use tibbles---a type of data frame
 
 We focus on certain R packages in the tidyverse, e.g., `tidyr` to clean data, `dplyr` for transforming the data, `ggplot2` for visualization, `modelr` and `broom` for modeling, and various data import packages among others. We use R markdown and R notebooks for communicating results, which may contain embedded graphics based on packages such as `ggplot2`. We will often be using Hadley's approach in this tutorial.  
 
+A good reference for this book is:  
+
+[Mastering Spark with R](https://therinspark.com)
+
 ### 1.1.1 Data Science Environments  
 
 Data science requires several computing environments to analyze and visualize large, complex data derived from a variety of sources. For the most part, data science is built on open-source software, an approach we use here. The principal software environments used are R, Hadoop, and Spark. I use the word "environment" here to mean extensibility, primarily through packages. However, R, Hadoop, and Spark are more appropriately called  ecosystems since each has a large numbers of supporting components, such as the database PostgreSQL. 
